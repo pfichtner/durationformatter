@@ -20,4 +20,51 @@
 		</dependency>
 	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>com.pyx4me</groupId>
+				<artifactId>proguard-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>proguard</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<assembly>
+						<inclusions>
+							<inclusion>
+								<groupId>com.google.guava</groupId>
+								<artifactId>guava</artifactId>
+							</inclusion>
+						</inclusions>
+					</assembly>
+
+					<obfuscate>false</obfuscate>
+					<includeDependency>true</includeDependency>
+					<addMavenDescriptor>false</addMavenDescriptor>
+					<options>
+						<option>-allowaccessmodification</option>
+						<option>-dontskipnonpubliclibraryclasses</option>
+						<option>-ignorewarnings</option> 
+						<option>-keep public class com.github.pfichtner.durationformatter.DurationFormatter { *; }</option>
+						<option>-keepattributes
+							Exceptions,InnerClasses,Signature,Deprecated,LineNumberTable,*Annotation*,EnclosingMethod</option>
+					</options>
+					<artifact>
+						<file>${project.build.directory}/proguard_map.txt</file>
+						<type>map</type>
+						<classifier>release</classifier>
+					</artifact>
+					<libs>
+						<lib>${java.home}/lib/rt.jar</lib>
+					</libs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>

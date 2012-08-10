@@ -1,9 +1,6 @@
 package com.github.pfichtner.durationformatter;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Predicates.equalTo;
-import static com.google.common.collect.Iterables.getLast;
-import static com.google.common.collect.Iterables.indexOf;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -12,7 +9,9 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,11 +21,6 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
 
 /**
  * A Formatter for durations. This class is threadsafe. Instances can be created
@@ -71,8 +65,8 @@ public class DurationFormatter {
 		private TimeUnit maximum = HOURS;
 		private boolean round = true;
 		private boolean stripLeadingZeros;
-		private HashMap<TimeUnit, String> formats = Maps.newHashMap();
-		private HashMap<TimeUnit, String> symbols = Maps.newHashMap();
+		private HashMap<TimeUnit, String> formats = new HashMap<TimeUnit, String>();
+		private HashMap<TimeUnit, String> symbols = new HashMap<TimeUnit, String>();
 
 		public DurationFormatter build() {
 			return new DurationFormatter(this);
@@ -132,8 +126,8 @@ public class DurationFormatter {
 		protected Builder clone() {
 			try {
 				Builder clone = (Builder) super.clone();
-				clone.formats = Maps.newHashMap(this.formats);
-				clone.symbols = Maps.newHashMap(this.symbols);
+				clone.formats = new HashMap<TimeUnit, String>(this.formats);
+				clone.symbols = new HashMap<TimeUnit, String>(this.symbols);
 				return clone;
 			} catch (CloneNotSupportedException e) {
 				throw Throwables.propagate(e);
@@ -142,9 +136,9 @@ public class DurationFormatter {
 
 	}
 
-	private static final List<TimeUnit> timeUnits = ImmutableList
-			.copyOf(Ordering.natural().reverse()
-					.sortedCopy(Arrays.asList(TimeUnit.values())));
+	private static final List<TimeUnit> timeUnits = Collections
+			.unmodifiableList(new ArrayList<TimeUnit>(
+					orderingNaturalReverse(Arrays.asList(TimeUnit.values()))));
 	private static final TimeUnit highestPrecision = getLast(timeUnits);
 
 	public static final DurationFormatter DIGITS = Builder.DIGITS.build();;
@@ -171,15 +165,17 @@ public class DurationFormatter {
 	public DurationFormatter(Builder builder) {
 		this.round = builder.round;
 		checkState(builder.minimum.compareTo(builder.maximum) <= 0);
-		this.idxMin = indexOf(timeUnits, equalTo(builder.minimum));
-		int idxMax = indexOf(timeUnits, equalTo(builder.maximum));
+		this.idxMin = indexOf(timeUnits, builder.minimum);
+		int idxMax = indexOf(timeUnits, builder.maximum);
 		checkState(this.idxMin > idxMax, "min must not be greater than max");
 		this.timeUnitMin = timeUnits.get(this.idxMin);
 		this.usedTimeUnits = timeUnits.subList(idxMax, this.idxMin + 1);
 		this.separator = builder.separator;
 		this.stripLeadingZeros = builder.stripLeadingZeros;
-		this.formats = ImmutableMap.copyOf(builder.formats);
-		this.symbols = ImmutableMap.copyOf(builder.symbols);
+		this.formats = Collections
+				.unmodifiableMap(new HashMap<TimeUnit, String>(builder.formats));
+		this.symbols = Collections
+				.unmodifiableMap(new HashMap<TimeUnit, String>(builder.symbols));
 	}
 
 	/**
@@ -216,7 +212,7 @@ public class DurationFormatter {
 	}
 
 	private List<String> getValues(long delta) {
-		List<String> strings = Lists.newArrayList();
+		List<String> strings = new ArrayList<String>();
 		long actual = delta;
 
 		TimeUnit last = getLast(this.usedTimeUnits);
@@ -237,6 +233,33 @@ public class DurationFormatter {
 			actual %= longVal;
 		}
 		return strings;
+	}
+
+	// -------------------------------------------------------------------------
+	// - methods primarily found in google guava but redefined to minimize jar -
+	// - size -
+	// -------------------------------------------------------------------------
+
+	private static <T> T getLast(List<T> ts) {
+		int size = ts.size();
+		return size == 0 ? null : ts.get(size - 1);
+	}
+
+	private static <T> int indexOf(List<T> ts, Object search) {
+		int i = 0;
+		for (T t : ts) {
+			if (search.equals(t)) {
+				return i;
+			}
+			i++;
+		}
+		return -1;
+	}
+
+	private static <T> List<T> orderingNaturalReverse(List<T> ts) {
+		List<T> result = new ArrayList<T>(ts);
+		Collections.sort(result, Collections.<T> reverseOrder());
+		return result;
 	}
 
 }
