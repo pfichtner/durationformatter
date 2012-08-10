@@ -1,6 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
+	<!-- http://www.sonatype.com/people/2009/09/maven-tips-and-tricks-using-github/ -->
+
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.pfichtner</groupId>
 	<artifactId>durationformatter</artifactId>
@@ -25,6 +27,7 @@
 			<plugin>
 				<groupId>com.pyx4me</groupId>
 				<artifactId>proguard-maven-plugin</artifactId>
+				<version>2.0.4</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -49,8 +52,9 @@
 					<options>
 						<option>-allowaccessmodification</option>
 						<option>-dontskipnonpubliclibraryclasses</option>
-						<option>-ignorewarnings</option> 
-						<option>-keep public class com.github.pfichtner.durationformatter.DurationFormatter { *; }</option>
+						<option>-ignorewarnings</option>
+						<option>-keep public class
+							com.github.pfichtner.durationformatter.DurationFormatter { *; }</option>
 						<option>-keepattributes
 							Exceptions,InnerClasses,Signature,Deprecated,LineNumberTable,*Annotation*,EnclosingMethod</option>
 					</options>
@@ -64,7 +68,20 @@
 					</libs>
 				</configuration>
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.0</version>
+			</plugin>
+
 		</plugins>
 	</build>
+
+	<scm>
+		<connection>scm:git:git@github.com/pfichtner/durationformatter.git</connection>
+		<url>scm:git:git@github.com/pfichtner/durationformatter.git</url>
+		<developerConnection>scm:git:git@github.com/pfichtner/durationformatter.git</developerConnection>
+	</scm>
 
 </project>
