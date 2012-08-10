@@ -79,9 +79,9 @@
 	</build>
 
 	<scm>
-		<connection>scm:git:git@github.com/pfichtner/durationformatter.git</connection>
-		<url>scm:git:git@github.com/pfichtner/durationformatter.git</url>
-		<developerConnection>scm:git:git@github.com/pfichtner/durationformatter.git</developerConnection>
+		<connection>https://github.com/pfichtner/durationformatter.git</connection>
+		<url>https://github.com/pfichtner/durationformatter.git</url>
+		<developerConnection>https://github.com/pfichtner/durationformatter.git</developerConnection>
 	</scm>
 
 </project>
