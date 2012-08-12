@@ -103,11 +103,11 @@
 	<distributionManagement>
 		<repository>
 			<id>repo</id>
-			<url>https://github.com/pfichtner/mavenrepo/releases</url>
+			<url>https://github.com/pfichtner/mavenrepo/tree/master/releases</url>
 		</repository>
 		<snapshotRepository>
 			<id>snapshot-repo</id>
-			<url>https://github.com/pfichtner/mavenrepo/snapshots</url>
+			<url>https://github.com/pfichtner/mavenrepo/tree/master/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 
