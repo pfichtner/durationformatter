@@ -1,11 +1,12 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<!-- http://www.sonatype.com/people/2009/09/maven-tips-and-tricks-using-github/ -->
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.pfichtner</groupId>
 	<artifactId>durationformatter</artifactId>
-	<version>0.0.5-SNAPSHOT</version>
+	<version>0.0.4-SNAPSHOT</version>
 	<url>https://github.com/pfichtner/durationformatter</url>
 
 	<properties>
@@ -57,6 +58,8 @@
 							<inclusion>
 								<groupId>com.google.guava</groupId>
 								<artifactId>guava</artifactId>
+								<filter>!com/google/common/base/FinalizableReferenceQueue</filter>
+								<filter>!com/google/common/collect/MinMaxPriorityQueue**</filter>
 							</inclusion>
 						</inclusions>
 					</assembly>
@@ -67,7 +70,6 @@
 					<options>
 						<option>-allowaccessmodification</option>
 						<option>-dontskipnonpubliclibraryclasses</option>
-						<option>-ignorewarnings</option>
 						<option>-keep public class
 							com.github.pfichtner.durationformatter.DurationFormatter { *; }</option>
 						<option>-keepattributes
@@ -82,6 +84,30 @@
 						<lib>${java.home}/lib/rt.jar</lib>
 					</libs>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>jarjar-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>jarjar</goal>
+						</goals>
+						<configuration>
+							<includes>
+								<include>com.github.pfichtner:durationformatter</include>
+							</includes>
+							<rules>
+								<rule>
+									<pattern>com.google.**</pattern>
+									<result>com.github.pfichtner.durationformatter.com.google.@1</result>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 
 			<plugin>
@@ -103,11 +129,11 @@
 	<distributionManagement>
 		<repository>
 			<id>repo</id>
-			<url>https://github.com/pfichtner/mavenrepo/tree/master/releases</url>
+			<url>https://github.com/pfichtner/mavenrepo/master/releases</url>
 		</repository>
 		<snapshotRepository>
 			<id>snapshot-repo</id>
-			<url>https://github.com/pfichtner/mavenrepo/tree/master/snapshots</url>
+			<url>https://github.com/pfichtner/mavenrepo/master/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 
