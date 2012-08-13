@@ -124,6 +124,7 @@
 		<developerConnection>scm:git:https://pfichtner@github.com/pfichtner/durationformatter.git</developerConnection>
 	</scm>
 
+	<!--  user/password, see http://www.sonatype.com/people/2010/11/what-to-do-when-nexus-returns-401/ -->
 	<distributionManagement>
 		<repository>
 			<id>sonatype-nexus-staging</id>
