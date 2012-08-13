@@ -126,11 +126,11 @@
 
 	<distributionManagement>
 		<repository>
-			<id>repo</id>
+			<id>sonatype-nexus-staging</id>
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
 		</repository>
 		<snapshotRepository>
-			<id>snapshot-repo</id>
+			<id>sonatype-nexus-snapshot</id>
 			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
