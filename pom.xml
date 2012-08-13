@@ -125,15 +125,14 @@
 		<developerConnection>scm:git:https://pfichtner@github.com/pfichtner/durationformatter.git</developerConnection>
 	</scm>
 
-	<!-- http://cemerick.com/2010/08/24/hosting-maven-repos-on-github/ -->
 	<distributionManagement>
 		<repository>
 			<id>repo</id>
-			<url>https://github.com/pfichtner/mavenrepo/master/releases</url>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
 		</repository>
 		<snapshotRepository>
 			<id>snapshot-repo</id>
-			<url>https://github.com/pfichtner/mavenrepo/master/snapshots</url>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 
