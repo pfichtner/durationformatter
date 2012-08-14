@@ -21,23 +21,31 @@ Default digit format
 		
 
 Default symbol format
+
     DurationFormatter df = DurationFormatter.SYMBOLS;
     assertEquals("792h 0min 33s", df.formatMillis(DAYS.toMillis(33) + SECONDS.toMillis(33)));
 
 To create your customized DurationFormatter you can use one of the predefined Builders
 ...there is one for digits...
-    DurationFormatter df  = DurationFormatter.Builder.DIGITS.minimum(TimeUnit.NANOSECONDS).maximum(MILLISECONDS).stripZeros(StripMode.LEADING).build();
+
+    DurationFormatter df  = DurationFormatter.Builder.DIGITS.minimum(TimeUnit.NANOSECONDS).maximum(MILLISECONDS)
+    	.stripZeros(StripMode.LEADING).build();
     assertEquals("000", df.format(0, TimeUnit.NANOSECONDS));
     assertEquals("999", df.format(999, TimeUnit.NANOSECONDS));
     assertEquals("001:499", df.format(1499, TimeUnit.NANOSECONDS));
 	
 ...and one for symbols...
-    DurationFormatter df = Builder.SYMBOLS.separator(", ").symbol(MINUTES, "m").valueSymbolSeparator(" ").build();
+
+    DurationFormatter df = Builder.SYMBOLS.separator(", ").symbol(MINUTES, "m")
+    	.valueSymbolSeparator(" ").build();
     assertEquals("0 h, 0 m, 34 s", df.formatMillis(SECONDS.toMillis(33) + MILLISECONDS.toMillis(777)));
 
 Of course you can create your own DurationFormatter without defaults by instantiating your own Builder
-    DurationFormatter df = new Builder().maximum(TimeUnit.DAYS).minimum(TimeUnit.NANOSECONDS).separator("|||||").valueSymbolSeparator("xXx").symbol(HOURS, "<<H>>").symbol(SECONDS, "<<S>>").build();
-    assertEquals("00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||00|||||00|||||00", df.formatMillis(HOURS.toMillis(1) + MINUTES.toMillis(2) + SECONDS.toMillis(3)));
+
+    DurationFormatter df = new Builder().maximum(TimeUnit.DAYS).minimum(TimeUnit.NANOSECONDS).separator("|||||")
+    	.valueSymbolSeparator("xXx").symbol(HOURS, "<<H>>").symbol(SECONDS, "<<S>>").build();
+    assertEquals("00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||00|||||00|||||00", df.formatMillis(HOURS.toMillis(1)
+    	+ MINUTES.toMillis(2) + SECONDS.toMillis(3)));
  
 
 Integration
