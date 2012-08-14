@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import com.github.pfichtner.durationformatter.DurationFormatter;
 import com.github.pfichtner.durationformatter.DurationFormatter.Builder;
+import com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros;
 
 public class DurationFormatterTest {
 
@@ -30,8 +30,7 @@ public class DurationFormatterTest {
 	@Test
 	public void testRounding() {
 		DurationFormatter roundOn = DurationFormatter.DIGITS;
-		DurationFormatter roundOff = DurationFormatter.Builder.DIGITS.round(
-				false).build();
+		DurationFormatter roundOff = Builder.DIGITS.round(false).build();
 		assertEquals("00:00:00", roundOff.formatMillis(499));
 		assertEquals("00:00:00", roundOn.formatMillis(499));
 
@@ -48,10 +47,11 @@ public class DurationFormatterTest {
 
 	@Test
 	public void testNanos() {
-		Builder builder = DurationFormatter.Builder.DIGITS.minimum(
-				TimeUnit.NANOSECONDS).maximum(MILLISECONDS);
+		Builder builder = Builder.DIGITS.minimum(TimeUnit.NANOSECONDS).maximum(
+				MILLISECONDS);
 		DurationFormatter roundOn = builder.build();
-		DurationFormatter strip = builder.stripLeadingZeros(true).build();
+		DurationFormatter strip = builder.suppressZeros(SuppressZeros.LEADING)
+				.build();
 		assertEquals("00:000:000", roundOn.format(0, TimeUnit.NANOSECONDS));
 		assertEquals("000", strip.format(0, TimeUnit.NANOSECONDS));
 
@@ -85,41 +85,61 @@ public class DurationFormatterTest {
 
 	@Test
 	public void testOwnSymbols() {
-		DurationFormatter df = Builder.SYMBOLS.separator(", ").build();
-		assertEquals("0h, 0min, 33s", df.formatMillis(SECONDS.toMillis(33)));
+		// use "m" instead of "min" for minutes
 
-		df = Builder.SYMBOLS.separator(", ").symbol(SECONDS, " s")
-				.symbol(MINUTES, " m").symbol(HOURS, " h").build();
+		Builder base = Builder.SYMBOLS.separator(", ").symbol(MINUTES, "m");
+		DurationFormatter df = base.build();
+		assertEquals("0h, 0m, 33s", df.formatMillis(SECONDS.toMillis(33)));
+
+		df = base.valueSymbolSeparator(" ").build();
 		assertEquals("0 h, 0 m, 33 s", df.formatMillis(SECONDS.toMillis(33)));
 		assertEquals(
 				"0 h, 0 m, 34 s",
 				df.formatMillis(SECONDS.toMillis(33)
 						+ MILLISECONDS.toMillis(777)));
 
-		df = Builder.SYMBOLS.separator(", ").minimum(MILLISECONDS)
-				.symbol(SECONDS, " s").symbol(MINUTES, " m")
-				.symbol(HOURS, " h").symbol(MILLISECONDS, " ms").build();
+		df = base.minimum(MILLISECONDS).valueSymbolSeparator(" ").build();
 		assertEquals("0 h, 0 m, 33 s, 0 ms",
 				df.formatMillis(SECONDS.toMillis(33)));
 
-		df = Builder.SYMBOLS.separator(", ").symbol(SECONDS, " s")
-				.symbol(MINUTES, " m").symbol(HOURS, " h")
-				.symbol(MILLISECONDS, " ms").build();
+		df = base.valueSymbolSeparator(" ").build();
 		assertEquals("0 h, 0 m, 33 s", df.formatMillis(SECONDS.toMillis(33)));
 		assertEquals(
 				"0 h, 0 m, 34 s",
 				df.formatMillis(SECONDS.toMillis(33)
 						+ MILLISECONDS.toMillis(777)));
 
-		df = Builder.SYMBOLS.minimum(MILLISECONDS).maximum(DAYS)
-				.symbol(MILLISECONDS, " ms").symbol(SECONDS, " s")
-				.symbol(MINUTES, " m").symbol(HOURS, " h").symbol(DAYS, " d")
-				.build();
+		df = Builder.SYMBOLS.minimum(MILLISECONDS).symbol(MINUTES, "m")
+				.maximum(DAYS).valueSymbolSeparator(" ").build();
 		assertEquals("1 d 6 h 51 m 51 s 111 ms", df.formatMillis(111111111));
 		long timestamp = 1344171582461L;
 		assertEquals("15557 d 12 h 59 m 42 s 461 ms",
 				df.formatMillis(timestamp));
+	}
 
+	@Test
+	public void testMoreSymbols() {
+		DurationFormatter df = Builder.SYMBOLS.round(false)
+				.minimum(TimeUnit.NANOSECONDS).maximum(MILLISECONDS)
+				.suppressZeros(SuppressZeros.LEADING).valueSymbolSeparator(" ")
+				.build();
+		assertEquals("360 ns", df.format(360, TimeUnit.NANOSECONDS));
+		assertEquals("1500 ms 0 μs 0 ns",
+				df.format(1500000000, TimeUnit.NANOSECONDS));
+		assertEquals("60 ms 1 μs 3 ns",
+				df.format(60001003, TimeUnit.NANOSECONDS));
+	}
+
+	@Test
+	public void testCrazy() {
+		DurationFormatter df = new Builder().maximum(TimeUnit.DAYS)
+				.minimum(TimeUnit.NANOSECONDS).separator("|||||")
+				.valueSymbolSeparator("xXx").symbol(HOURS, "<<H>>")
+				.symbol(SECONDS, "<<S>>").build();
+		assertEquals(
+				"00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||00|||||00|||||00",
+				df.formatMillis(HOURS.toMillis(1) + MINUTES.toMillis(2)
+						+ SECONDS.toMillis(3)));
 	}
 
 }

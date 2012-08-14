@@ -12,9 +12,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -23,22 +28,240 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 
 /**
- * A Formatter for durations. This class is threadsafe. Instances can be created
- * using the {@link Builder} class.
+ * A Formatter for durations. All implementing classes have to been threadsafe.
+ * Instances can be created using the {@link Builder} class.
  * 
  * @author Peter Fichtner
  */
 @ThreadSafe
-public class DurationFormatter {
+public interface DurationFormatter {
+
+	public enum SuppressZeros {
+		LEADING, TRAILING, MIDDLE
+	}
 
 	/**
-	 * Helper class to create {@link DurationFormatter}s. This class is
-	 * threadsafe so each method call will return a new instance!
+	 * Default instance, for format-string see {@link Builder#DIGITS}.
+	 */
+	DurationFormatter DIGITS = Builder.DIGITS.build();;
+
+	/**
+	 * Default instance, for format-string see {@link Builder#SYMBOLS}.
+	 */
+	DurationFormatter SYMBOLS = Builder.SYMBOLS.build();
+
+	/**
+	 * Format the passed milliseconds to the format specified.
+	 * 
+	 * @param value
+	 *            the millis to format
+	 * @return String containing the duration
+	 * @see #format(long, TimeUnit)
+	 */
+	String formatMillis(long value);
+
+	/**
+	 * Format the passed duration to the format specified.
+	 * 
+	 * @param value
+	 *            the duration to format
+	 * @return String containing the duration
+	 */
+	String format(long value, TimeUnit timeUnit);
+
+	/**
+	 * Helper class to create {@link DefaultDurationFormatter}s. This class is
+	 * threadsafe so each method call will return a new instance of the Builder!
 	 * 
 	 * @author Peter Fichtner
 	 */
 	@ThreadSafe
 	public static class Builder implements Cloneable {
+
+		private static final List<TimeUnit> timeUnits = Collections
+				.unmodifiableList(new ArrayList<TimeUnit>(
+						orderingNaturalReverse(Arrays.asList(TimeUnit.values()))));
+
+		private static final EnumSet<SuppressZeros> DEFAULT_SUPPRESS_MODE = EnumSet
+				.noneOf(SuppressZeros.class);
+
+		/**
+		 * A Formatter for durations. This class is threadsafe. Instances can be
+		 * created using the {@link Builder} class.
+		 * 
+		 * @author Peter Fichtner
+		 */
+		@ThreadSafe
+		private static class DefaultDurationFormatter implements
+				DurationFormatter {
+
+			private final TimeUnit highestPrecision = getLast(timeUnits);
+
+			private static final Integer ZERO = Integer.valueOf(0);
+
+			private static final String DEFAULT_FORMAT = "%02d";
+
+			private final boolean round;
+			private final List<TimeUnit> usedTimeUnits;
+			private final String separator;
+			private final String valueSymbolSeparator;
+			private int idxMin;
+			private TimeUnit timeUnitMin;
+			private Map<TimeUnit, String> formats;
+			private Map<TimeUnit, String> symbols;
+			private Set<SuppressZeros> stripMode;
+
+			public DefaultDurationFormatter(Builder builder) {
+				this.round = builder.round;
+				checkState(builder.minimum.compareTo(builder.maximum) <= 0);
+				this.idxMin = indexOf(timeUnits, builder.minimum);
+				int idxMax = indexOf(timeUnits, builder.maximum);
+				checkState(this.idxMin > idxMax,
+						"min must not be greater than max");
+				this.timeUnitMin = timeUnits.get(this.idxMin);
+				this.usedTimeUnits = timeUnits.subList(idxMax, this.idxMin + 1);
+				this.separator = builder.separator;
+				this.valueSymbolSeparator = builder.valueSymbolSeparator;
+
+				this.stripMode = EnumSet.copyOf(builder.suppressZeros);
+				this.formats = Collections
+						.unmodifiableMap(new HashMap<TimeUnit, String>(
+								builder.formats));
+				this.symbols = Collections
+						.unmodifiableMap(new HashMap<TimeUnit, String>(
+								builder.symbols));
+			}
+
+			private static String floor(long d, long n) {
+				return Integer.toString((int) Math.floor((double) d / n));
+			}
+
+			/**
+			 * Format the passed milliseconds to the format specified.
+			 * 
+			 * @param value
+			 *            the millis to format
+			 * @return String containing the duration
+			 * @see #format(long, TimeUnit)
+			 */
+			public String formatMillis(long value) {
+				return format(value, MILLISECONDS);
+			}
+
+			/**
+			 * Format the passed duration to the format specified.
+			 * 
+			 * @param value
+			 *            the duration to format
+			 * @return String containing the duration
+			 */
+			public String format(long value, TimeUnit timeUnit) {
+				long nanos = NANOSECONDS.convert(value, timeUnit);
+				List<String> values = getStrings(this.round
+						&& !highestPrecision.equals(this.timeUnitMin) ? calculateRounded(nanos)
+						: nanos);
+				return Joiner.on(this.separator).join(values);
+			}
+
+			private long calculateRounded(long value) {
+				TimeUnit smaller = timeUnits.get(this.idxMin + 1);
+				long add = smaller.convert(1, this.timeUnitMin) / 2;
+				return value + NANOSECONDS.convert(add, smaller);
+			}
+
+			private List<String> getStrings(long delta) {
+				Map<TimeUnit, Integer> values = strip(getValues(delta));
+				List<String> strings = new ArrayList<String>();
+
+				for (Entry<TimeUnit, Integer> entry : values.entrySet()) {
+					String format = this.formats.get(entry.getKey());
+					String value = String.format(
+							format == null ? DEFAULT_FORMAT : format,
+							entry.getValue());
+					String symbol = this.symbols.get(entry.getKey());
+					strings.add(symbol == null ? value : value
+							+ valueSymbolSeparator + symbol);
+				}
+				return strings;
+			}
+
+			private Map<TimeUnit, Integer> strip(Map<TimeUnit, Integer> a) {
+				return stripMiddle(stripLeadingZeros(stripTrailingZeros(a)));
+			}
+
+			private Map<TimeUnit, Integer> stripLeadingZeros(
+					Map<TimeUnit, Integer> map) {
+				return this.stripMode.contains(SuppressZeros.LEADING) ? filter(map)
+						: map;
+			}
+
+			private Map<TimeUnit, Integer> stripMiddle(
+					Map<TimeUnit, Integer> map) {
+				return this.stripMode.contains(SuppressZeros.MIDDLE) ? filterMiddle(map)
+						: map;
+			}
+
+			private Map<TimeUnit, Integer> filterMiddle(
+					Map<TimeUnit, Integer> map) {
+				throw new UnsupportedOperationException("not yet implemeneted");
+			}
+
+			private Map<TimeUnit, Integer> stripTrailingZeros(
+					Map<TimeUnit, Integer> map) {
+				return this.stripMode.contains(SuppressZeros.TRAILING) ? reverse(filter(reverse(new LinkedHashMap<TimeUnit, Integer>(
+						map)))) : map;
+			}
+
+			private static LinkedHashMap<TimeUnit, Integer> reverse(
+					LinkedHashMap<TimeUnit, Integer> map) {
+				Set<Entry<TimeUnit, Integer>> entrySet = map.entrySet();
+				LinkedHashMap<TimeUnit, Integer> result = new LinkedHashMap<TimeUnit, Integer>(
+						entrySet.size(), 1f);
+				for (Entry<TimeUnit, Integer> entry : revserse(new ArrayList<Entry<TimeUnit, Integer>>(
+						entrySet))) {
+					result.put(entry.getKey(), entry.getValue());
+				}
+				return result;
+			}
+
+			private static <T> List<T> revserse(List<T> list) {
+				Collections.reverse(list);
+				return list;
+			}
+
+			private static LinkedHashMap<TimeUnit, Integer> filter(
+					Map<TimeUnit, Integer> map) {
+				LinkedHashMap<TimeUnit, Integer> result = new LinkedHashMap<TimeUnit, Integer>();
+
+				boolean added = false;
+				for (Iterator<Entry<TimeUnit, Integer>> it = map.entrySet()
+						.iterator(); it.hasNext();) {
+					Entry<TimeUnit, Integer> entry = it.next();
+					if (added || !it.hasNext()
+							|| !entry.getValue().equals(ZERO)) {
+						result.put(entry.getKey(), entry.getValue());
+						added = true;
+					}
+				}
+				return result;
+			}
+
+			private Map<TimeUnit, Integer> getValues(long lonVal) {
+				Map<TimeUnit, Integer> strings = new LinkedHashMap<TimeUnit, Integer>(
+						this.usedTimeUnits.size(), 1f);
+				long actual = lonVal;
+				for (TimeUnit timeUnit : this.usedTimeUnits) {
+					long longVal = timeUnit.toNanos(1);
+					strings.put(
+							timeUnit,
+							actual >= longVal ? Integer.valueOf(floor(actual,
+									longVal)) : ZERO);
+					actual %= longVal;
+				}
+				return strings;
+			}
+
+		}
 
 		private static final Builder BASE = new Builder().minimum(SECONDS)
 				.maximum(HOURS).format(TimeUnit.MICROSECONDS, "%03d")
@@ -56,20 +279,21 @@ public class DurationFormatter {
 		 * <code>01:12:33</code>)
 		 */
 		public static final Builder SYMBOLS = BASE.separator(" ").format("%d")
-				.symbol(NANOSECONDS, "ns").symbol(MICROSECONDS, "µs")
+				.symbol(NANOSECONDS, "ns").symbol(MICROSECONDS, "μs")
 				.symbol(MILLISECONDS, "ms").symbol(SECONDS, "s")
 				.symbol(MINUTES, "min").symbol(HOURS, "h").symbol(DAYS, "d");
 
 		private String separator = ":";
+		private String valueSymbolSeparator = "";
 		private TimeUnit minimum = MILLISECONDS;
 		private TimeUnit maximum = HOURS;
 		private boolean round = true;
-		private boolean stripLeadingZeros;
+		private Set<SuppressZeros> suppressZeros = DEFAULT_SUPPRESS_MODE;
 		private HashMap<TimeUnit, String> formats = new HashMap<TimeUnit, String>();
 		private HashMap<TimeUnit, String> symbols = new HashMap<TimeUnit, String>();
 
-		public DurationFormatter build() {
-			return new DurationFormatter(this);
+		public DefaultDurationFormatter build() {
+			return new DefaultDurationFormatter(this);
 		}
 
 		public Builder maximum(TimeUnit maximum) {
@@ -84,15 +308,47 @@ public class DurationFormatter {
 			return clone;
 		}
 
+		/**
+		 * Sets the minimum and maximum to the passed TimeUnit by calling
+		 * {@link #minimum(TimeUnit)} and {@link #maximum(TimeUnit)},
+		 * 
+		 * @param timeUnit
+		 *            TimeUnit to use for minimum and maximum
+		 * @return new Builder instance
+		 */
+		public Builder useOnly(TimeUnit timeUnit) {
+			return minimum(timeUnit).maximum(timeUnit);
+		}
+
 		public Builder round(boolean round) {
 			Builder clone = clone();
 			clone.round = round;
 			return clone;
 		}
 
+		/**
+		 * Sets the separator between the "value timeunit" pairs
+		 * 
+		 * @param separator
+		 *            separator to use
+		 * @return new Builder instance
+		 */
 		public Builder separator(String separator) {
 			Builder clone = clone();
 			clone.separator = separator;
+			return clone;
+		}
+
+		/**
+		 * Sets the separator between the value and timeunit
+		 * 
+		 * @param separator
+		 *            separator to use
+		 * @return new Builder instance
+		 */
+		public Builder valueSymbolSeparator(String valueSymbolSeparator) {
+			Builder clone = clone();
+			clone.valueSymbolSeparator = valueSymbolSeparator;
 			return clone;
 		}
 
@@ -116,9 +372,15 @@ public class DurationFormatter {
 			return clone;
 		}
 
-		public Builder stripLeadingZeros(boolean stripLeadingZeros) {
+		public Builder suppressZeros(SuppressZeros suppressZeros) {
+			return suppressZeros(suppressZeros == null ? DEFAULT_SUPPRESS_MODE
+					: EnumSet.of(suppressZeros));
+		}
+
+		public Builder suppressZeros(Set<SuppressZeros> suppressZeros) {
 			Builder clone = clone();
-			clone.stripLeadingZeros = stripLeadingZeros;
+			clone.suppressZeros = suppressZeros == null ? DEFAULT_SUPPRESS_MODE
+					: suppressZeros;
 			return clone;
 		}
 
@@ -134,132 +396,34 @@ public class DurationFormatter {
 			}
 		}
 
-	}
+		// -------------------------------------------------------------------------
+		// - methods primarily found in google guava but redefined to
+		// minimize jar -
+		// - size -
+		// -------------------------------------------------------------------------
 
-	private static final List<TimeUnit> timeUnits = Collections
-			.unmodifiableList(new ArrayList<TimeUnit>(
-					orderingNaturalReverse(Arrays.asList(TimeUnit.values()))));
-	private static final TimeUnit highestPrecision = getLast(timeUnits);
-
-	public static final DurationFormatter DIGITS = Builder.DIGITS.build();;
-
-	public static final DurationFormatter SYMBOLS = Builder.SYMBOLS.build();
-
-	private static final Integer ZERO = Integer.valueOf(0);
-
-	private static final String DEFAULT_FORMAT = "%02d";
-
-	private static String floor(long d, long n) {
-		return Integer.toString((int) Math.floor((double) d / n));
-	}
-
-	private final boolean round;
-	private final List<TimeUnit> usedTimeUnits;
-	private final String separator;
-	private int idxMin;
-	private TimeUnit timeUnitMin;
-	private Map<TimeUnit, String> formats;
-	private Map<TimeUnit, String> symbols;
-	private boolean stripLeadingZeros;
-
-	public DurationFormatter(Builder builder) {
-		this.round = builder.round;
-		checkState(builder.minimum.compareTo(builder.maximum) <= 0);
-		this.idxMin = indexOf(timeUnits, builder.minimum);
-		int idxMax = indexOf(timeUnits, builder.maximum);
-		checkState(this.idxMin > idxMax, "min must not be greater than max");
-		this.timeUnitMin = timeUnits.get(this.idxMin);
-		this.usedTimeUnits = timeUnits.subList(idxMax, this.idxMin + 1);
-		this.separator = builder.separator;
-		this.stripLeadingZeros = builder.stripLeadingZeros;
-		this.formats = Collections
-				.unmodifiableMap(new HashMap<TimeUnit, String>(builder.formats));
-		this.symbols = Collections
-				.unmodifiableMap(new HashMap<TimeUnit, String>(builder.symbols));
-	}
-
-	/**
-	 * Format the passed milliseconds to the format specified.
-	 * 
-	 * @param value
-	 *            the millis to format
-	 * @return String containing the duration
-	 * @see #format(long, TimeUnit)
-	 */
-	public String formatMillis(long value) {
-		return format(value, MILLISECONDS);
-	}
-
-	/**
-	 * Format the passed duration to the format specified.
-	 * 
-	 * @param value
-	 *            the duration to format
-	 * @return String containing the duration
-	 */
-	public String format(long value, TimeUnit timeUnit) {
-		long nanos = NANOSECONDS.convert(value, timeUnit);
-		List<String> values = getValues(this.round
-				&& !highestPrecision.equals(this.timeUnitMin) ? calculateRounded(nanos)
-				: nanos);
-		return Joiner.on(this.separator).join(values);
-	}
-
-	private long calculateRounded(long value) {
-		TimeUnit smaller = timeUnits.get(this.idxMin + 1);
-		long add = smaller.convert(1, this.timeUnitMin) / 2;
-		return value + NANOSECONDS.convert(add, smaller);
-	}
-
-	private List<String> getValues(long delta) {
-		List<String> strings = new ArrayList<String>();
-		long actual = delta;
-
-		TimeUnit last = getLast(this.usedTimeUnits);
-		boolean added = false;
-		for (TimeUnit timeUnit : this.usedTimeUnits) {
-			long longVal = timeUnit.toNanos(1);
-			String format = this.formats.get(timeUnit);
-			boolean fits = actual >= longVal;
-			if (added || fits || !this.stripLeadingZeros
-					|| timeUnit.equals(last)) {
-				String value = String.format(format == null ? DEFAULT_FORMAT
-						: format,
-						fits ? Integer.valueOf(floor(actual, longVal)) : ZERO);
-				String symbol = this.symbols.get(timeUnit);
-				strings.add(symbol == null ? value : value + symbol);
-				added = true;
-			}
-			actual %= longVal;
+		private static <T> T getLast(List<T> ts) {
+			int size = ts.size();
+			return size == 0 ? null : ts.get(size - 1);
 		}
-		return strings;
-	}
 
-	// -------------------------------------------------------------------------
-	// - methods primarily found in google guava but redefined to minimize jar -
-	// - size -
-	// -------------------------------------------------------------------------
-
-	private static <T> T getLast(List<T> ts) {
-		int size = ts.size();
-		return size == 0 ? null : ts.get(size - 1);
-	}
-
-	private static <T> int indexOf(List<T> ts, Object search) {
-		int i = 0;
-		for (T t : ts) {
-			if (search.equals(t)) {
-				return i;
+		private static <T> int indexOf(List<T> ts, Object search) {
+			int i = 0;
+			for (T t : ts) {
+				if (search.equals(t)) {
+					return i;
+				}
+				i++;
 			}
-			i++;
+			return -1;
 		}
-		return -1;
-	}
 
-	private static <T> List<T> orderingNaturalReverse(List<T> ts) {
-		List<T> result = new ArrayList<T>(ts);
-		Collections.sort(result, Collections.<T> reverseOrder());
-		return result;
+		private static <T> List<T> orderingNaturalReverse(List<T> ts) {
+			List<T> result = new ArrayList<T>(ts);
+			Collections.sort(result, Collections.<T> reverseOrder());
+			return result;
+		}
+
 	}
 
 }
