@@ -16,6 +16,7 @@ Usage
 These showcases are copied from the UnitTests:
 
 Default digit format
+
     DurationFormatter df = DurationFormatter.DIGITS;
     assertEquals("01:02:03", df.formatMillis(HOURS.toMillis(1) + MINUTES.toMillis(2) + SECONDS.toMillis(3)));
 		
@@ -25,7 +26,7 @@ Default symbol format
     DurationFormatter df = DurationFormatter.SYMBOLS;
     assertEquals("792h 0min 33s", df.formatMillis(DAYS.toMillis(33) + SECONDS.toMillis(33)));
 
-To create your customized DurationFormatter you can use one of the predefined Builders
+To create your customized DurationFormatter you can use one of the predefined Builders<br>
 ...there is one for digits...
 
     DurationFormatter df  = DurationFormatter.Builder.DIGITS.minimum(TimeUnit.NANOSECONDS).maximum(MILLISECONDS)
