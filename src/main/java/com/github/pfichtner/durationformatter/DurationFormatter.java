@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,10 +105,10 @@ public interface DurationFormatter {
 			private final String separator;
 			private final String valueSymbolSeparator;
 			private int idxMin;
-			private TimeUnit timeUnitMin;
-			private Map<TimeUnit, String> formats;
-			private Map<TimeUnit, String> symbols;
-			private Set<SuppressZeros> stripMode;
+			private final TimeUnit timeUnitMin;
+			private final Filter filter;
+			private final Map<TimeUnit, String> formats;
+			private final Map<TimeUnit, String> symbols;
 
 			public DefaultDurationFormatter(Builder builder) {
 				this.round = builder.round;
@@ -123,7 +122,9 @@ public interface DurationFormatter {
 				this.separator = builder.separator;
 				this.valueSymbolSeparator = builder.valueSymbolSeparator;
 
-				this.stripMode = EnumSet.copyOf(builder.suppressZeros);
+				this.filter = builder.suppressZeros.isEmpty() ? Filter.NULL
+						: new DefaultFilter(
+								EnumSet.copyOf(builder.suppressZeros));
 				this.formats = Collections
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.formats));
@@ -170,10 +171,9 @@ public interface DurationFormatter {
 			}
 
 			private List<String> getStrings(long delta) {
-				Map<TimeUnit, Integer> values = strip(getValues(delta));
 				List<String> strings = new ArrayList<String>();
-
-				for (Entry<TimeUnit, Integer> entry : values.entrySet()) {
+				for (Entry<TimeUnit, Integer> entry : this.filter.filter(
+						getValues(delta)).entrySet()) {
 					String format = this.formats.get(entry.getKey());
 					String value = String.format(
 							format == null ? DEFAULT_FORMAT : format,
@@ -185,69 +185,8 @@ public interface DurationFormatter {
 				return strings;
 			}
 
-			private Map<TimeUnit, Integer> strip(Map<TimeUnit, Integer> a) {
-				return stripMiddle(stripLeadingZeros(stripTrailingZeros(a)));
-			}
-
-			private Map<TimeUnit, Integer> stripLeadingZeros(
-					Map<TimeUnit, Integer> map) {
-				return this.stripMode.contains(SuppressZeros.LEADING) ? filter(map)
-						: map;
-			}
-
-			private Map<TimeUnit, Integer> stripMiddle(
-					Map<TimeUnit, Integer> map) {
-				return this.stripMode.contains(SuppressZeros.MIDDLE) ? filterMiddle(map)
-						: map;
-			}
-
-			private Map<TimeUnit, Integer> filterMiddle(
-					Map<TimeUnit, Integer> map) {
-				throw new UnsupportedOperationException("not yet implemeneted");
-			}
-
-			private Map<TimeUnit, Integer> stripTrailingZeros(
-					Map<TimeUnit, Integer> map) {
-				return this.stripMode.contains(SuppressZeros.TRAILING) ? reverse(filter(reverse(new LinkedHashMap<TimeUnit, Integer>(
-						map)))) : map;
-			}
-
-			private static LinkedHashMap<TimeUnit, Integer> reverse(
-					LinkedHashMap<TimeUnit, Integer> map) {
-				Set<Entry<TimeUnit, Integer>> entrySet = map.entrySet();
-				LinkedHashMap<TimeUnit, Integer> result = new LinkedHashMap<TimeUnit, Integer>(
-						entrySet.size(), 1f);
-				for (Entry<TimeUnit, Integer> entry : revserse(new ArrayList<Entry<TimeUnit, Integer>>(
-						entrySet))) {
-					result.put(entry.getKey(), entry.getValue());
-				}
-				return result;
-			}
-
-			private static <T> List<T> revserse(List<T> list) {
-				Collections.reverse(list);
-				return list;
-			}
-
-			private static LinkedHashMap<TimeUnit, Integer> filter(
-					Map<TimeUnit, Integer> map) {
-				LinkedHashMap<TimeUnit, Integer> result = new LinkedHashMap<TimeUnit, Integer>();
-
-				boolean added = false;
-				for (Iterator<Entry<TimeUnit, Integer>> it = map.entrySet()
-						.iterator(); it.hasNext();) {
-					Entry<TimeUnit, Integer> entry = it.next();
-					if (added || !it.hasNext()
-							|| !entry.getValue().equals(ZERO)) {
-						result.put(entry.getKey(), entry.getValue());
-						added = true;
-					}
-				}
-				return result;
-			}
-
-			private Map<TimeUnit, Integer> getValues(long lonVal) {
-				Map<TimeUnit, Integer> strings = new LinkedHashMap<TimeUnit, Integer>(
+			private LinkedHashMap<TimeUnit, Integer> getValues(long lonVal) {
+				LinkedHashMap<TimeUnit, Integer> strings = new LinkedHashMap<TimeUnit, Integer>(
 						this.usedTimeUnits.size(), 1f);
 				long actual = lonVal;
 				for (TimeUnit timeUnit : this.usedTimeUnits) {
