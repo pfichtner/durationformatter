@@ -188,8 +188,8 @@ public interface DurationFormatter {
 							&& idx > lastNonNull & !(allNull && idx == 0);
 					boolean suppC = isZero && this.suppressMiddle
 							&& idx > firstNonNull && idx < lastNonNull;
-					boolean filter = suppA || suppB || suppC;
-					if (!filter) {
+
+					if (!(suppA || suppB || suppC)) {
 						sb.append(
 								getValueString(entry.getValue(), entry.getKey()))
 								.append(this.separator);
