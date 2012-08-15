@@ -60,4 +60,5 @@ Since durationformatter is hosted on maven central Maven users can easily use th
         <version>XXX</version>
     </dependency>
 
-Non-maven users can copy the artifact directly from maven central into their local workspace
+Non-maven users can copy the artifact(s) directly from maven central into their local workspace<br>
+http://central.maven.org/maven2/com/github/pfichtner/durationformatter/
