@@ -104,9 +104,10 @@ public interface DurationFormatter {
 			private final List<TimeUnit> usedTimeUnits;
 			private final String separator;
 			private final String valueSymbolSeparator;
-			private boolean suppressLeading;
-			private boolean suppressTrailing;
-			private int idxMin;
+			private final boolean suppressLeading;
+			private final boolean suppressTrailing;
+			private final boolean suppressMiddle;
+			private final int idxMin;
 			private final TimeUnit timeUnitMin;
 			private final Map<TimeUnit, String> formats;
 			private final Map<TimeUnit, String> symbols;
@@ -126,6 +127,8 @@ public interface DurationFormatter {
 						.contains(SuppressZeros.LEADING);
 				this.suppressTrailing = builder.suppressZeros
 						.contains(SuppressZeros.TRAILING);
+				this.suppressMiddle = builder.suppressZeros
+						.contains(SuppressZeros.MIDDLE);
 				this.formats = Collections
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.formats));
@@ -157,8 +160,8 @@ public interface DurationFormatter {
 			 *            the duration to format
 			 * @return String containing the duration
 			 */
-			public String format(long longVal, TimeUnit timeUnit) {
-				long nanos = NANOSECONDS.convert(longVal, timeUnit);
+			public String format(long longVal, TimeUnit srcTu) {
+				long nanos = NANOSECONDS.convert(longVal, srcTu);
 
 				StringBuilder sb = new StringBuilder();
 				Set<Entry<TimeUnit, Integer>> entrySet = getValues(
@@ -170,20 +173,27 @@ public interface DurationFormatter {
 				for (Iterator<Entry<TimeUnit, Integer>> iterator = entrySet
 						.iterator(); iterator.hasNext();) {
 					Entry<TimeUnit, Integer> entry = iterator.next();
-					boolean isLast = !iterator.hasNext();
-					boolean isZero = ZERO.equals(entry.getValue());
+					Integer value = entry.getValue();
 
-					boolean suppressA = isZero && this.suppressLeading
-							&& !nonZeroFound && !isLast && sb.length() == 0;
-					boolean suppressB = isZero && this.suppressTrailing
-							&& nonZeroFound && !isLast;
-					if (!suppressA && !suppressB) {
-						String format = this.formats.get(entry.getKey());
-						String symbol = this.symbols.get(entry.getKey());
+					boolean isLast = !iterator.hasNext();
+					boolean isZero = ZERO.equals(value);
+
+					boolean suppA = isZero && this.suppressLeading
+							&& !nonZeroFound;
+					boolean suppB = isZero && this.suppressTrailing
+							&& nonZeroFound;
+					boolean suppC = isZero && this.suppressMiddle && !suppA
+							&& !suppB;
+
+					boolean forceAdd = isLast || sb.length() != 0;
+					if (forceAdd || !(suppA || suppB || suppC)) {
+						TimeUnit timeUnit = entry.getKey();
+						String format = this.formats.get(timeUnit);
+						String symbol = this.symbols.get(timeUnit);
 						sb.append(String.format(format == null ? DEFAULT_FORMAT
-								: format, entry.getValue()));
+								: format, value));
 						if (symbol != null) {
-							sb.append(valueSymbolSeparator).append(symbol);
+							sb.append(this.valueSymbolSeparator).append(symbol);
 						}
 						if (!isLast) {
 							sb.append(this.separator);
