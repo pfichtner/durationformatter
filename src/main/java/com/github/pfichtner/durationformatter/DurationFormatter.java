@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 
 /**
@@ -104,9 +104,10 @@ public interface DurationFormatter {
 			private final List<TimeUnit> usedTimeUnits;
 			private final String separator;
 			private final String valueSymbolSeparator;
+			private boolean suppressLeading;
+			private boolean suppressTrailing;
 			private int idxMin;
 			private final TimeUnit timeUnitMin;
-			private final Filter filter;
 			private final Map<TimeUnit, String> formats;
 			private final Map<TimeUnit, String> symbols;
 
@@ -121,10 +122,10 @@ public interface DurationFormatter {
 				this.usedTimeUnits = timeUnits.subList(idxMax, this.idxMin + 1);
 				this.separator = builder.separator;
 				this.valueSymbolSeparator = builder.valueSymbolSeparator;
-
-				this.filter = builder.suppressZeros.isEmpty() ? Filter.NULL
-						: new DefaultFilter(
-								EnumSet.copyOf(builder.suppressZeros));
+				this.suppressLeading = builder.suppressZeros
+						.contains(SuppressZeros.LEADING);
+				this.suppressTrailing = builder.suppressZeros
+						.contains(SuppressZeros.TRAILING);
 				this.formats = Collections
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.formats));
@@ -152,37 +153,51 @@ public interface DurationFormatter {
 			/**
 			 * Format the passed duration to the format specified.
 			 * 
-			 * @param value
+			 * @param longVal
 			 *            the duration to format
 			 * @return String containing the duration
 			 */
-			public String format(long value, TimeUnit timeUnit) {
-				long nanos = NANOSECONDS.convert(value, timeUnit);
-				List<String> values = getStrings(this.round
-						&& !highestPrecision.equals(this.timeUnitMin) ? calculateRounded(nanos)
-						: nanos);
-				return Joiner.on(this.separator).join(values);
+			public String format(long longVal, TimeUnit timeUnit) {
+				long nanos = NANOSECONDS.convert(longVal, timeUnit);
+
+				StringBuilder sb = new StringBuilder();
+				Set<Entry<TimeUnit, Integer>> entrySet = getValues(
+						(this.round
+								&& !highestPrecision.equals(this.timeUnitMin) ? calculateRounded(nanos)
+								: nanos)).entrySet();
+
+				boolean nonZeroFound = false;
+				for (Iterator<Entry<TimeUnit, Integer>> iterator = entrySet
+						.iterator(); iterator.hasNext();) {
+					Entry<TimeUnit, Integer> entry = iterator.next();
+					boolean isLast = !iterator.hasNext();
+					boolean isZero = ZERO.equals(entry.getValue());
+
+					boolean suppressA = isZero && this.suppressLeading
+							&& !nonZeroFound && !isLast && sb.length() == 0;
+					boolean suppressB = isZero && this.suppressTrailing
+							&& nonZeroFound && !isLast;
+					if (!suppressA && !suppressB) {
+						String format = this.formats.get(entry.getKey());
+						String symbol = this.symbols.get(entry.getKey());
+						sb.append(String.format(format == null ? DEFAULT_FORMAT
+								: format, entry.getValue()));
+						if (symbol != null) {
+							sb.append(valueSymbolSeparator).append(symbol);
+						}
+						if (!isLast) {
+							sb.append(this.separator);
+						}
+					}
+					nonZeroFound = nonZeroFound || !isZero;
+				}
+				return sb.toString();
 			}
 
 			private long calculateRounded(long value) {
 				TimeUnit smaller = timeUnits.get(this.idxMin + 1);
 				long add = smaller.convert(1, this.timeUnitMin) / 2;
 				return value + NANOSECONDS.convert(add, smaller);
-			}
-
-			private List<String> getStrings(long delta) {
-				List<String> strings = new ArrayList<String>();
-				for (Entry<TimeUnit, Integer> entry : this.filter.filter(
-						getValues(delta)).entrySet()) {
-					String format = this.formats.get(entry.getKey());
-					String value = String.format(
-							format == null ? DEFAULT_FORMAT : format,
-							entry.getValue());
-					String symbol = this.symbols.get(entry.getKey());
-					strings.add(symbol == null ? value : value
-							+ valueSymbolSeparator + symbol);
-				}
-				return strings;
 			}
 
 			private LinkedHashMap<TimeUnit, Integer> getValues(long lonVal) {
@@ -228,8 +243,8 @@ public interface DurationFormatter {
 		private TimeUnit maximum = HOURS;
 		private boolean round = true;
 		private Set<SuppressZeros> suppressZeros = DEFAULT_SUPPRESS_MODE;
-		private HashMap<TimeUnit, String> formats = new HashMap<TimeUnit, String>();
-		private HashMap<TimeUnit, String> symbols = new HashMap<TimeUnit, String>();
+		private Map<TimeUnit, String> formats = new HashMap<TimeUnit, String>();
+		private Map<TimeUnit, String> symbols = new HashMap<TimeUnit, String>();
 
 		public DefaultDurationFormatter build() {
 			return new DefaultDurationFormatter(this);
