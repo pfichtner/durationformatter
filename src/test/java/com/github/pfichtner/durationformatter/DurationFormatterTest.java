@@ -50,26 +50,53 @@ public class DurationFormatterTest {
 		Builder builder = Builder.DIGITS.minimum(TimeUnit.NANOSECONDS).maximum(
 				MILLISECONDS);
 		DurationFormatter roundOn = builder.build();
-		DurationFormatter strip = builder.suppressZeros(SuppressZeros.LEADING)
-				.build();
+		DurationFormatter stripLeft = builder.suppressZeros(
+				SuppressZeros.LEADING).build();
+		DurationFormatter stripRight = builder.suppressZeros(
+				SuppressZeros.TRAILING).build();
+		DurationFormatter stripMiddle = builder.suppressZeros(
+				SuppressZeros.MIDDLE).build();
+
 		assertEquals("00:000:000", roundOn.format(0, TimeUnit.NANOSECONDS));
-		assertEquals("000", strip.format(0, TimeUnit.NANOSECONDS));
+		assertEquals("000", stripLeft.format(0, TimeUnit.NANOSECONDS));
+		assertEquals("00", stripRight.format(0, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:000", stripMiddle.format(0, TimeUnit.NANOSECONDS));
 
 		assertEquals("00:000:499", roundOn.format(499, TimeUnit.NANOSECONDS));
-		assertEquals("499", strip.format(499, TimeUnit.NANOSECONDS));
+		assertEquals("499", stripLeft.format(499, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:499", stripRight.format(499, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:499",
+				stripMiddle.format(499, TimeUnit.NANOSECONDS));
+
 		assertEquals("00:000:500", roundOn.format(500, TimeUnit.NANOSECONDS));
-		assertEquals("500", strip.format(500, TimeUnit.NANOSECONDS));
+		assertEquals("500", stripLeft.format(500, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:500", stripRight.format(500, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:500", stripMiddle.format(500, TimeUnit.NANOSECONDS));
+
 		assertEquals("00:000:999", roundOn.format(999, TimeUnit.NANOSECONDS));
-		assertEquals("999", strip.format(999, TimeUnit.NANOSECONDS));
+		assertEquals("999", stripLeft.format(999, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:999", stripRight.format(999, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:999", stripMiddle.format(999, TimeUnit.NANOSECONDS));
+
 		assertEquals("00:001:499", roundOn.format(1499, TimeUnit.NANOSECONDS));
-		assertEquals("001:499", strip.format(1499, TimeUnit.NANOSECONDS));
+		assertEquals("001:499", stripLeft.format(1499, TimeUnit.NANOSECONDS));
+		assertEquals("00:001:499", stripRight.format(1499, TimeUnit.NANOSECONDS));
+		assertEquals("00:001:499", stripMiddle.format(1499, TimeUnit.NANOSECONDS));
 
 		assertEquals("00:000:001", roundOn.format(1, TimeUnit.NANOSECONDS));
-		assertEquals("001", strip.format(1, TimeUnit.NANOSECONDS));
+		assertEquals("001", stripLeft.format(1, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:001", stripRight.format(1, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:001", stripMiddle.format(1, TimeUnit.NANOSECONDS));
+
 		assertEquals("00:001:000", roundOn.format(1, TimeUnit.MICROSECONDS));
-		assertEquals("001:000", strip.format(1, TimeUnit.MICROSECONDS));
+		assertEquals("001:000", stripLeft.format(1, TimeUnit.MICROSECONDS));
+		assertEquals("00:001", stripRight.format(1, TimeUnit.MICROSECONDS));
+		assertEquals("00:001:000", stripMiddle.format(1, TimeUnit.MICROSECONDS));
+
 		assertEquals("01:000:000", roundOn.format(1, TimeUnit.MILLISECONDS));
-		assertEquals("01:000:000", strip.format(1, TimeUnit.MILLISECONDS));
+		assertEquals("01:000:000", stripLeft.format(1, TimeUnit.MILLISECONDS));
+		assertEquals("01", stripRight.format(1, TimeUnit.MILLISECONDS));
+		assertEquals("01:000:000", stripMiddle.format(1, TimeUnit.MILLISECONDS));
 	}
 
 	@Test

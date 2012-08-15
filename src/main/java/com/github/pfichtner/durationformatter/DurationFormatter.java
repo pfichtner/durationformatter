@@ -164,44 +164,76 @@ public interface DurationFormatter {
 				long nanos = NANOSECONDS.convert(longVal, srcTu);
 
 				StringBuilder sb = new StringBuilder();
-				Set<Entry<TimeUnit, Integer>> entrySet = getValues(
-						(this.round
-								&& !highestPrecision.equals(this.timeUnitMin) ? calculateRounded(nanos)
-								: nanos)).entrySet();
+				LinkedHashMap<TimeUnit, Integer> values = getValues((this.round
+						&& !highestPrecision.equals(this.timeUnitMin) ? calculateRounded(nanos)
+						: nanos));
 
-				boolean nonZeroFound = false;
+				Set<Entry<TimeUnit, Integer>> entrySet = values.entrySet();
+
+				// TODO only call when needed
+				int firstNonNull = findFirstNonNull(entrySet);
+				int lastNonNull = findLastNonNull(entrySet);
+				boolean allNull = firstNonNull - lastNonNull == entrySet.size();
+
+				int idx = 0;
 				for (Iterator<Entry<TimeUnit, Integer>> iterator = entrySet
 						.iterator(); iterator.hasNext();) {
 					Entry<TimeUnit, Integer> entry = iterator.next();
-					Integer value = entry.getValue();
-
-					boolean isLast = !iterator.hasNext();
-					boolean isZero = ZERO.equals(value);
+					boolean isZero = ZERO.equals(entry.getValue());
 
 					boolean suppA = isZero && this.suppressLeading
-							&& !nonZeroFound;
+							&& idx < firstNonNull
+							&& !(allNull && idx == entrySet.size() - 1);
 					boolean suppB = isZero && this.suppressTrailing
-							&& nonZeroFound;
-					boolean suppC = isZero && this.suppressMiddle && !suppA
-							&& !suppB;
-
-					boolean forceAdd = isLast || sb.length() != 0;
-					if (forceAdd || !(suppA || suppB || suppC)) {
-						TimeUnit timeUnit = entry.getKey();
-						String format = this.formats.get(timeUnit);
-						String symbol = this.symbols.get(timeUnit);
-						sb.append(String.format(format == null ? DEFAULT_FORMAT
-								: format, value));
-						if (symbol != null) {
-							sb.append(this.valueSymbolSeparator).append(symbol);
-						}
-						if (!isLast) {
-							sb.append(this.separator);
-						}
+							&& idx > lastNonNull & !(allNull && idx == 0);
+					boolean suppC = isZero && this.suppressMiddle
+							&& idx > firstNonNull && idx < lastNonNull;
+					boolean filter = suppA || suppB || suppC;
+					if (!filter) {
+						sb.append(
+								getValueString(entry.getValue(), entry.getKey()))
+								.append(this.separator);
 					}
-					nonZeroFound = nonZeroFound || !isZero;
+					idx++;
 				}
-				return sb.toString();
+				return sb.length() == 0 ? "" : sb.delete(
+						sb.length() - this.separator.length(), sb.length())
+						.toString();
+			}
+
+			private int findFirstNonNull(Set<Entry<TimeUnit, Integer>> entrySet) {
+				int idx = 0;
+				for (Entry<TimeUnit, Integer> entry : entrySet) {
+					if (!isZero(entry.getValue())) {
+						return idx;
+					}
+					idx++;
+				}
+				return entrySet.size();
+			}
+
+			private int findLastNonNull(Set<Entry<TimeUnit, Integer>> entrySet) {
+				int idx = 0, result = 0;
+				for (Entry<TimeUnit, Integer> entry : entrySet) {
+					if (!isZero(entry.getValue())) {
+						result = idx;
+					}
+					idx++;
+				}
+				return result;
+			}
+
+			private static boolean isZero(Integer v) {
+				return ZERO.equals(v);
+			}
+
+			private String getValueString(Integer value, TimeUnit timeUnit) {
+				String format = this.formats.get(timeUnit);
+				String symbol = this.symbols.get(timeUnit);
+				String stringVal = String.format(
+						format == null ? DEFAULT_FORMAT : format, value);
+				return symbol == null ? stringVal : stringVal
+						+ this.valueSymbolSeparator + symbol;
 			}
 
 			private long calculateRounded(long value) {
