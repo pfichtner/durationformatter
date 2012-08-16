@@ -1,6 +1,5 @@
 package com.github.pfichtner.durationformatter;
 
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -22,17 +21,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.concurrent.ThreadSafe;
-
-import com.google.common.base.Throwables;
-
 /**
  * A Formatter for durations. All implementing classes have to been threadsafe.
  * Instances can be created using the {@link Builder} class.
  * 
  * @author Peter Fichtner
  */
-@ThreadSafe
 public interface DurationFormatter {
 
 	public enum SuppressZeros {
@@ -74,7 +68,6 @@ public interface DurationFormatter {
 	 * 
 	 * @author Peter Fichtner
 	 */
-	@ThreadSafe
 	public static class Builder implements Cloneable {
 
 		private static final List<TimeUnit> timeUnits = Collections
@@ -90,7 +83,6 @@ public interface DurationFormatter {
 		 * 
 		 * @author Peter Fichtner
 		 */
-		@ThreadSafe
 		private static class DefaultDurationFormatter implements
 				DurationFormatter {
 
@@ -114,7 +106,8 @@ public interface DurationFormatter {
 
 			public DefaultDurationFormatter(Builder builder) {
 				this.round = builder.round;
-				checkState(builder.minimum.compareTo(builder.maximum) <= 0);
+				checkState(builder.minimum.compareTo(builder.maximum) <= 0,
+						"maximum must not be smaller than minimum");
 				this.idxMin = indexOf(timeUnits, builder.minimum);
 				int idxMax = indexOf(timeUnits, builder.maximum);
 				checkState(this.idxMin > idxMax,
@@ -388,7 +381,7 @@ public interface DurationFormatter {
 				clone.symbols = new HashMap<TimeUnit, String>(this.symbols);
 				return clone;
 			} catch (CloneNotSupportedException e) {
-				throw Throwables.propagate(e);
+				throw new RuntimeException(e);
 			}
 		}
 
@@ -397,6 +390,12 @@ public interface DurationFormatter {
 		// minimize jar -
 		// - size -
 		// -------------------------------------------------------------------------
+
+		private static void checkState(boolean state, String errorMessage) {
+			if (!state) {
+				throw new IllegalStateException(errorMessage);
+			}
+		}
 
 		private static <T> T getLast(List<T> ts) {
 			int size = ts.size();
