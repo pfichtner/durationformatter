@@ -32,12 +32,36 @@
 		</license>
 	</licenses>
 
+	<profiles>
+		<profile>
+			<id>release-sign-artifacts</id>
+			<activation>
+				<property>
+					<name>performRelease</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 	<dependencies>
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>11.0.2</version>
-		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -61,23 +85,10 @@
 					</execution>
 				</executions>
 				<configuration>
-					<assembly>
-						<inclusions>
-							<inclusion>
-								<groupId>com.google.guava</groupId>
-								<artifactId>guava</artifactId>
-								<filter>!com/google/common/base/FinalizableReferenceQueue</filter>
-								<filter>!com/google/common/collect/MinMaxPriorityQueue**</filter>
-							</inclusion>
-						</inclusions>
-					</assembly>
-
 					<obfuscate>false</obfuscate>
 					<includeDependency>true</includeDependency>
 					<addMavenDescriptor>false</addMavenDescriptor>
 					<options>
-						<option>-allowaccessmodification</option>
-						<option>-mergeinterfacesaggressively</option>
 						<option>-dontskipnonpubliclibraryclasses</option>
 						<option>-optimizationpasses 99</option>
 						<option>-keep public class
@@ -97,44 +108,6 @@
 			</plugin>
 
 			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>jarjar-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>jarjar</goal>
-						</goals>
-						<configuration>
-							<includes>
-								<include>com.github.pfichtner:durationformatter</include>
-							</includes>
-							<rules>
-								<rule>
-									<pattern>com.google.**</pattern>
-									<result>com.github.pfichtner.durationformatter.com.google.@1</result>
-								</rule>
-							</rules>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-gpg-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>sign-artifacts</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>sign</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
 				<version>2.2.2</version>
@@ -145,7 +118,7 @@
 
 	<scm>
 		<url>https://github.com/pfichtner/durationformatter</url>
-		<connection>scm:git:https://pfichtner@github.com/pfichtner/durationformatter.git</connection>
+		<connection>scm:git:https://github.com/pfichtner/durationformatter.git</connection>
 		<developerConnection>scm:git:https://pfichtner@github.com/pfichtner/durationformatter.git</developerConnection>
 	</scm>
 
