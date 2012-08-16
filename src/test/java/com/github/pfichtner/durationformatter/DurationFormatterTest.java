@@ -2,12 +2,14 @@ package com.github.pfichtner.durationformatter;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
-import java.util.concurrent.TimeUnit;
+import java.util.EnumSet;
 
 import org.junit.Test;
 
@@ -47,7 +49,7 @@ public class DurationFormatterTest {
 
 	@Test
 	public void testNanos() {
-		Builder builder = Builder.DIGITS.minimum(TimeUnit.NANOSECONDS).maximum(
+		Builder builder = Builder.DIGITS.minimum(NANOSECONDS).maximum(
 				MILLISECONDS);
 		DurationFormatter roundOn = builder.build();
 		DurationFormatter stripLeft = builder.suppressZeros(
@@ -57,46 +59,45 @@ public class DurationFormatterTest {
 		DurationFormatter stripMiddle = builder.suppressZeros(
 				SuppressZeros.MIDDLE).build();
 
-		assertEquals("00:000:000", roundOn.format(0, TimeUnit.NANOSECONDS));
-		assertEquals("000", stripLeft.format(0, TimeUnit.NANOSECONDS));
-		assertEquals("00", stripRight.format(0, TimeUnit.NANOSECONDS));
-		assertEquals("00:000:000", stripMiddle.format(0, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:000", roundOn.format(0, NANOSECONDS));
+		assertEquals("000", stripLeft.format(0, NANOSECONDS));
+		assertEquals("00", stripRight.format(0, NANOSECONDS));
+		assertEquals("00:000:000", stripMiddle.format(0, NANOSECONDS));
 
-		assertEquals("00:000:499", roundOn.format(499, TimeUnit.NANOSECONDS));
-		assertEquals("499", stripLeft.format(499, TimeUnit.NANOSECONDS));
-		assertEquals("00:000:499", stripRight.format(499, TimeUnit.NANOSECONDS));
-		assertEquals("00:000:499",
-				stripMiddle.format(499, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:499", roundOn.format(499, NANOSECONDS));
+		assertEquals("499", stripLeft.format(499, NANOSECONDS));
+		assertEquals("00:000:499", stripRight.format(499, NANOSECONDS));
+		assertEquals("00:000:499", stripMiddle.format(499, NANOSECONDS));
 
-		assertEquals("00:000:500", roundOn.format(500, TimeUnit.NANOSECONDS));
-		assertEquals("500", stripLeft.format(500, TimeUnit.NANOSECONDS));
-		assertEquals("00:000:500", stripRight.format(500, TimeUnit.NANOSECONDS));
-		assertEquals("00:000:500", stripMiddle.format(500, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:500", roundOn.format(500, NANOSECONDS));
+		assertEquals("500", stripLeft.format(500, NANOSECONDS));
+		assertEquals("00:000:500", stripRight.format(500, NANOSECONDS));
+		assertEquals("00:000:500", stripMiddle.format(500, NANOSECONDS));
 
-		assertEquals("00:000:999", roundOn.format(999, TimeUnit.NANOSECONDS));
-		assertEquals("999", stripLeft.format(999, TimeUnit.NANOSECONDS));
-		assertEquals("00:000:999", stripRight.format(999, TimeUnit.NANOSECONDS));
-		assertEquals("00:000:999", stripMiddle.format(999, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:999", roundOn.format(999, NANOSECONDS));
+		assertEquals("999", stripLeft.format(999, NANOSECONDS));
+		assertEquals("00:000:999", stripRight.format(999, NANOSECONDS));
+		assertEquals("00:000:999", stripMiddle.format(999, NANOSECONDS));
 
-		assertEquals("00:001:499", roundOn.format(1499, TimeUnit.NANOSECONDS));
-		assertEquals("001:499", stripLeft.format(1499, TimeUnit.NANOSECONDS));
-		assertEquals("00:001:499", stripRight.format(1499, TimeUnit.NANOSECONDS));
-		assertEquals("00:001:499", stripMiddle.format(1499, TimeUnit.NANOSECONDS));
+		assertEquals("00:001:499", roundOn.format(1499, NANOSECONDS));
+		assertEquals("001:499", stripLeft.format(1499, NANOSECONDS));
+		assertEquals("00:001:499", stripRight.format(1499, NANOSECONDS));
+		assertEquals("00:001:499", stripMiddle.format(1499, NANOSECONDS));
 
-		assertEquals("00:000:001", roundOn.format(1, TimeUnit.NANOSECONDS));
-		assertEquals("001", stripLeft.format(1, TimeUnit.NANOSECONDS));
-		assertEquals("00:000:001", stripRight.format(1, TimeUnit.NANOSECONDS));
-		assertEquals("00:000:001", stripMiddle.format(1, TimeUnit.NANOSECONDS));
+		assertEquals("00:000:001", roundOn.format(1, NANOSECONDS));
+		assertEquals("001", stripLeft.format(1, NANOSECONDS));
+		assertEquals("00:000:001", stripRight.format(1, NANOSECONDS));
+		assertEquals("00:000:001", stripMiddle.format(1, NANOSECONDS));
 
-		assertEquals("00:001:000", roundOn.format(1, TimeUnit.MICROSECONDS));
-		assertEquals("001:000", stripLeft.format(1, TimeUnit.MICROSECONDS));
-		assertEquals("00:001", stripRight.format(1, TimeUnit.MICROSECONDS));
-		assertEquals("00:001:000", stripMiddle.format(1, TimeUnit.MICROSECONDS));
+		assertEquals("00:001:000", roundOn.format(1, MICROSECONDS));
+		assertEquals("001:000", stripLeft.format(1, MICROSECONDS));
+		assertEquals("00:001", stripRight.format(1, MICROSECONDS));
+		assertEquals("00:001:000", stripMiddle.format(1, MICROSECONDS));
 
-		assertEquals("01:000:000", roundOn.format(1, TimeUnit.MILLISECONDS));
-		assertEquals("01:000:000", stripLeft.format(1, TimeUnit.MILLISECONDS));
-		assertEquals("01", stripRight.format(1, TimeUnit.MILLISECONDS));
-		assertEquals("01:000:000", stripMiddle.format(1, TimeUnit.MILLISECONDS));
+		assertEquals("01:000:000", roundOn.format(1, MILLISECONDS));
+		assertEquals("01:000:000", stripLeft.format(1, MILLISECONDS));
+		assertEquals("01", stripRight.format(1, MILLISECONDS));
+		assertEquals("01:000:000", stripMiddle.format(1, MILLISECONDS));
 	}
 
 	@Test
@@ -147,22 +148,97 @@ public class DurationFormatterTest {
 	@Test
 	public void testMoreSymbols() {
 		DurationFormatter df = Builder.SYMBOLS.round(false)
-				.minimum(TimeUnit.NANOSECONDS).maximum(MILLISECONDS)
+				.minimum(NANOSECONDS).maximum(MILLISECONDS)
 				.suppressZeros(SuppressZeros.LEADING).valueSymbolSeparator(" ")
 				.build();
-		assertEquals("360 ns", df.format(360, TimeUnit.NANOSECONDS));
-		assertEquals("1500 ms 0 μs 0 ns",
-				df.format(1500000000, TimeUnit.NANOSECONDS));
-		assertEquals("60 ms 1 μs 3 ns",
-				df.format(60001003, TimeUnit.NANOSECONDS));
+		assertEquals("360 ns", df.format(360, NANOSECONDS));
+		assertEquals("1500 ms 0 μs 0 ns", df.format(1500000000, NANOSECONDS));
+		assertEquals("60 ms 1 μs 3 ns", df.format(60001003, NANOSECONDS));
+	}
+
+	@Test
+	public void testSuppressZeros() {
+		Builder builder = Builder.SYMBOLS.minimum(NANOSECONDS).maximum(DAYS);
+		DurationFormatter l = builder.suppressZeros(SuppressZeros.LEADING)
+				.build();
+		DurationFormatter r = builder.suppressZeros(SuppressZeros.TRAILING)
+				.build();
+		DurationFormatter m = builder.suppressZeros(SuppressZeros.MIDDLE)
+				.build();
+		DurationFormatter lm = builder.suppressZeros(
+				EnumSet.of(SuppressZeros.LEADING, SuppressZeros.MIDDLE))
+				.build();
+		DurationFormatter rm = builder.suppressZeros(
+				EnumSet.of(SuppressZeros.TRAILING, SuppressZeros.MIDDLE))
+				.build();
+		DurationFormatter lrm = builder.suppressZeros(
+				EnumSet.of(SuppressZeros.TRAILING, SuppressZeros.MIDDLE,
+						SuppressZeros.LEADING)).build();
+
+		long n0000001 = 1;
+		long n1000000 = DAYS.toNanos(1);
+		long n1000001 = DAYS.toNanos(1) + 1;
+		long n0100010 = HOURS.toNanos(1) + MICROSECONDS.toNanos(1);
+		long n0010100 = MINUTES.toNanos(1) + MILLISECONDS.toNanos(1);
+		long n0011100 = MINUTES.toNanos(1) + SECONDS.toNanos(1)
+				+ MILLISECONDS.toNanos(1);
+		long n1011101 = DAYS.toNanos(1) + MINUTES.toNanos(1)
+				+ SECONDS.toNanos(1) + MILLISECONDS.toNanos(1) + 1;
+
+		assertEquals("1ns", l.format(n0000001, NANOSECONDS));
+		assertEquals("1d 0h 0min 0s 0ms 0μs 0ns", l.format(n1000000, NANOSECONDS));
+		assertEquals("1d 0h 0min 0s 0ms 0μs 1ns", l.format(n1000001, NANOSECONDS));
+		assertEquals("1h 0min 0s 0ms 1μs 0ns", l.format(n0100010, NANOSECONDS));
+		assertEquals("1min 0s 1ms 0μs 0ns", l.format(n0010100, NANOSECONDS));
+		assertEquals("1min 1s 1ms 0μs 0ns", l.format(n0011100, NANOSECONDS));
+		assertEquals("1d 0h 1min 1s 1ms 0μs 1ns", l.format(n1011101, NANOSECONDS));
+
+		assertEquals("0d 0h 0min 0s 0ms 0μs 1ns", r.format(n0000001, NANOSECONDS));
+		assertEquals("1d", r.format(n1000000, NANOSECONDS));
+		assertEquals("1d 0h 0min 0s 0ms 0μs 1ns", r.format(n1000001, NANOSECONDS));
+		assertEquals("0d 1h 0min 0s 0ms 1μs", r.format(n0100010, NANOSECONDS));
+		assertEquals("0d 0h 1min 0s 1ms", r.format(n0010100, NANOSECONDS));
+		assertEquals("0d 0h 1min 1s 1ms", r.format(n0011100, NANOSECONDS));
+		assertEquals("1d 0h 1min 1s 1ms 0μs 1ns", r.format(n1011101, NANOSECONDS));
+
+		assertEquals("0d 0h 0min 0s 0ms 0μs 1ns", m.format(n0000001, NANOSECONDS));
+		assertEquals("1d 0h 0min 0s 0ms 0μs 0ns", m.format(n1000000, NANOSECONDS));
+		assertEquals("1d 1ns", m.format(n1000001, NANOSECONDS));
+		assertEquals("0d 1h 1μs 0ns", m.format(n0100010, NANOSECONDS));
+		assertEquals("0d 0h 1min 1ms 0μs 0ns", m.format(n0010100, NANOSECONDS));
+		assertEquals("0d 0h 1min 1s 1ms 0μs 0ns", m.format(n0011100, NANOSECONDS));
+		assertEquals("1d 1min 1s 1ms 1ns", m.format(n1011101, NANOSECONDS));
+
+		assertEquals("1ns", lm.format(n0000001, NANOSECONDS));
+		assertEquals("1d 0h 0min 0s 0ms 0μs 0ns", lm.format(n1000000, NANOSECONDS));
+		assertEquals("1d 1ns", lm.format(n1000001, NANOSECONDS));
+		assertEquals("1h 1μs 0ns", lm.format(n0100010, NANOSECONDS));
+		assertEquals("1min 1ms 0μs 0ns", lm.format(n0010100, NANOSECONDS));
+		assertEquals("1min 1s 1ms 0μs 0ns", lm.format(n0011100, NANOSECONDS));
+		assertEquals("1d 1min 1s 1ms 1ns", lm.format(n1011101, NANOSECONDS));
+
+		assertEquals("0d 0h 0min 0s 0ms 0μs 1ns", rm.format(n0000001, NANOSECONDS));
+		assertEquals("1d", rm.format(n1000000, NANOSECONDS));
+		assertEquals("1d 1ns", rm.format(n1000001, NANOSECONDS));
+		assertEquals("0d 1h 1μs", rm.format(n0100010, NANOSECONDS));
+		assertEquals("0d 0h 1min 1ms", rm.format(n0010100, NANOSECONDS));
+		assertEquals("0d 0h 1min 1s 1ms", rm.format(n0011100, NANOSECONDS));
+		assertEquals("1d 1min 1s 1ms 1ns", rm.format(n1011101, NANOSECONDS));
+
+		assertEquals("1ns", lrm.format(n0000001, NANOSECONDS));
+		assertEquals("1d", lrm.format(n1000000, NANOSECONDS));
+		assertEquals("1d 1ns", lrm.format(n1000001, NANOSECONDS));
+		assertEquals("1h 1μs", lrm.format(n0100010, NANOSECONDS));
+		assertEquals("1min 1ms", lrm.format(n0010100, NANOSECONDS));
+		assertEquals("1min 1s 1ms", lrm.format(n0011100, NANOSECONDS));
+		assertEquals("1d 1min 1s 1ms 1ns", lrm.format(n1011101, NANOSECONDS));
 	}
 
 	@Test
 	public void testCrazy() {
-		DurationFormatter df = new Builder().maximum(TimeUnit.DAYS)
-				.minimum(TimeUnit.NANOSECONDS).separator("|||||")
-				.valueSymbolSeparator("xXx").symbol(HOURS, "<<H>>")
-				.symbol(SECONDS, "<<S>>").build();
+		DurationFormatter df = new Builder().maximum(DAYS).minimum(NANOSECONDS)
+				.separator("|||||").valueSymbolSeparator("xXx")
+				.symbol(HOURS, "<<H>>").symbol(SECONDS, "<<S>>").build();
 		assertEquals(
 				"00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||00|||||00|||||00",
 				df.formatMillis(HOURS.toMillis(1) + MINUTES.toMillis(2)
