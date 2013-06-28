@@ -72,3 +72,5 @@ Since durationformatter is hosted on maven central Maven users can easily use th
 
 Non-maven users can copy the artifact(s) directly from maven central into their local workspace<br>
 http://central.maven.org/maven2/com/github/pfichtner/durationformatter/
+
+[![Build Status](https://buildhive.cloudbees.com/job/pfichtner/job/durationformatter/badge/icon)](https://buildhive.cloudbees.com/job/pfichtner/job/durationformatter/)
