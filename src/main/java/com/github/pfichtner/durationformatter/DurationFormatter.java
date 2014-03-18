@@ -264,8 +264,8 @@ public interface DurationFormatter {
 		public static final Builder DIGITS = BASE;
 
 		/**
-		 * Default instance that formats seconds to hours using digits (e.g.
-		 * <code>01:12:33</code>)
+		 * Default instance that formats seconds to hours using symbols (e.g.
+		 * <code>0h 12m 33s</code>)
 		 */
 		public static final Builder SYMBOLS = BASE.separator(" ").format("%d")
 				.symbol(NANOSECONDS, "ns").symbol(MICROSECONDS, "μs")
