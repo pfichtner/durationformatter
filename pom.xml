@@ -103,6 +103,8 @@
 						<option>-optimizationpasses 99</option>
 						<option>-keep public class
 							com.github.pfichtner.durationformatter.DurationFormatter { *; }</option>
+						<option>-keep public class
+							com.github.pfichtner.durationformatter.DurationFormatter$* { *; }</option>
 						<option>-keepattributes
 							Exceptions,InnerClasses,Signature,Deprecated,LineNumberTable,*Annotation*,EnclosingMethod</option>
 					</options>
