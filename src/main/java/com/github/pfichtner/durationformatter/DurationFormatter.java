@@ -99,6 +99,7 @@ public interface DurationFormatter {
 			private final boolean suppressLeading;
 			private final boolean suppressTrailing;
 			private final boolean suppressMiddle;
+			private final int maximumAmountOfUnitsToShow;
 			private final int idxMin;
 			private final TimeUnit timeUnitMin;
 			private final Map<TimeUnit, String> formats;
@@ -128,6 +129,7 @@ public interface DurationFormatter {
 				this.symbols = Collections
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.symbols));
+				this.maximumAmountOfUnitsToShow = builder.maximumAmountOfUnitsToShow;
 			}
 
 			private static String floor(long d, long n) {
@@ -181,8 +183,9 @@ public interface DurationFormatter {
 							&& idx > lastNonNull & !(allNull && idx == 0);
 					boolean suppC = isZero && this.suppressMiddle
 							&& idx > firstNonNull && idx < lastNonNull;
+					boolean suppD = idx >= this.maximumAmountOfUnitsToShow;
 
-					if (!(suppA || suppB || suppC)) {
+					if (!(suppA || suppB || suppC || suppD)) {
 						sb.append(
 								getValueString(entry.getValue(), entry.getKey()))
 								.append(this.separator);
@@ -272,6 +275,7 @@ public interface DurationFormatter {
 				.symbol(MILLISECONDS, "ms").symbol(SECONDS, "s")
 				.symbol(MINUTES, "min").symbol(HOURS, "h").symbol(DAYS, "d");
 
+		private int maximumAmountOfUnitsToShow = Integer.MAX_VALUE;
 		private String separator = ":";
 		private String valueSymbolSeparator = "";
 		private TimeUnit minimum = MILLISECONDS;
@@ -281,7 +285,7 @@ public interface DurationFormatter {
 		private Map<TimeUnit, String> formats = new HashMap<TimeUnit, String>();
 		private Map<TimeUnit, String> symbols = new HashMap<TimeUnit, String>();
 
-		public DefaultDurationFormatter build() {
+		public DurationFormatter build() {
 			return new DefaultDurationFormatter(this);
 		}
 
@@ -370,6 +374,20 @@ public interface DurationFormatter {
 			Builder clone = clone();
 			clone.suppressZeros = suppressZeros == null ? DEFAULT_SUPPRESS_MODE
 					: suppressZeros;
+			return clone;
+		}
+
+		/**
+		 * If you have lung running jobs (e.g. download, convention, ...) you
+		 * want not to display 03:00:00:00:01 but display 03 or 03:00
+		 * 
+		 * @param maximumAmountOfUnitsToShow
+		 *            how many units (from the left) should be shown
+		 * @return this Builder
+		 */
+		public Builder maximumAmountOfUnitsToShow(int maximumAmountOfUnitsToShow) {
+			Builder clone = clone();
+			clone.maximumAmountOfUnitsToShow = maximumAmountOfUnitsToShow;
 			return clone;
 		}
 
