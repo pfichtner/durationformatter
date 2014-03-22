@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A Formatter for durations. All implementing classes have to been threadsafe.
+ * A Formatter for durations. All implementing classes have to be threadsafe.
  * Instances can be created using the {@link Builder} class.
  * 
  * @author Peter Fichtner
