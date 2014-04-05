@@ -139,7 +139,7 @@ public interface DurationFormatter {
 
 			}
 
-			public class RemoveLeadingStrategy implements Strategy {
+			public class RemoveLeadingZerosStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
 					return removeZeros(values,
@@ -148,7 +148,7 @@ public interface DurationFormatter {
 
 			}
 
-			public class RemoveTrailingStrategy implements Strategy {
+			public class RemoveTrailingZerosStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
 					return removeZeros(values,
@@ -157,7 +157,7 @@ public interface DurationFormatter {
 
 			}
 
-			public class RemoveMiddleStrategy implements Strategy {
+			public class RemoveMiddleZerosStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
 					Iterable<Bucket> sequence = values.sequence(timeUnitMax,
@@ -278,11 +278,11 @@ public interface DurationFormatter {
 				StrategyBuilder sb = new StrategyBuilder()
 						.add(new RestrictToStrategy());
 				sb = builder.suppressZeros.contains(SuppressZeros.LEADING) ? sb
-						.add(new RemoveLeadingStrategy()) : sb;
+						.add(new RemoveLeadingZerosStrategy()) : sb;
 				sb = builder.suppressZeros.contains(SuppressZeros.TRAILING) ? sb
-						.add(new RemoveTrailingStrategy()) : sb;
+						.add(new RemoveTrailingZerosStrategy()) : sb;
 				sb = builder.suppressZeros.contains(SuppressZeros.MIDDLE) ? sb
-						.add(new RemoveMiddleStrategy()) : sb;
+						.add(new RemoveMiddleZerosStrategy()) : sb;
 				sb.add(new LimitStrategy());
 				sb = builder.round ? sb.add(new RoundStrategy()) : sb;
 				sb.add(new PullFromLeftStrategy());
