@@ -184,16 +184,13 @@ public interface DurationFormatter {
 				public TimeValues apply(TimeValues values) {
 					int vs = 0;
 					for (Bucket bucket : values) {
-						if (bucket != null) {
-							boolean visible = bucket.isVisible()
-									&& vs < maximumAmountOfUnitsToShow
-									&& timeUnitMin.compareTo(bucket
-											.getTimeUnit()) <= 0;
-							if (visible) {
-								vs++;
-							}
-							bucket.setVisible(visible);
+						boolean visible = bucket.isVisible()
+								&& vs < maximumAmountOfUnitsToShow
+								&& timeUnitMin.compareTo(bucket.getTimeUnit()) <= 0;
+						if (visible) {
+							vs++;
 						}
+						bucket.setVisible(visible);
 					}
 					return values;
 				}
