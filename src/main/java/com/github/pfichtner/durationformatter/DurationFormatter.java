@@ -131,16 +131,21 @@ public interface DurationFormatter {
 			public class SetUnusedTimeUnitsInvisibleStrategy implements
 					Strategy {
 
-				private TimeUnit maximum;
+				private final TimeUnit minimum;
+				private final TimeUnit maximum;
 
-				public SetUnusedTimeUnitsInvisibleStrategy(TimeUnit maximum) {
+				public SetUnusedTimeUnitsInvisibleStrategy(TimeUnit minimum,
+						TimeUnit maximum) {
+					this.minimum = minimum;
 					this.maximum = maximum;
 				}
 
 				public TimeValues apply(TimeValues values) {
 					for (Bucket bucket : values) {
-						bucket.setVisible(this.maximum.compareTo(bucket
-								.getTimeUnit()) >= 0);
+						TimeUnit timeUnit = bucket.getTimeUnit();
+						boolean a = this.minimum.compareTo(timeUnit) <= 0;
+						boolean b = this.maximum.compareTo(timeUnit) >= 0;
+						bucket.setVisible(a && b);
 					}
 					return values;
 				}
@@ -188,12 +193,16 @@ public interface DurationFormatter {
 
 			public class LimitStrategy implements Strategy {
 
+				private int limit;
+
+				public LimitStrategy(int limit) {
+					this.limit = limit;
+				}
+
 				public TimeValues apply(TimeValues values) {
 					int vs = 0;
 					for (Bucket bucket : values) {
-						boolean visible = bucket.isVisible()
-								&& vs < maximumAmountOfUnitsToShow
-								&& timeUnitMin.compareTo(bucket.getTimeUnit()) <= 0;
+						boolean visible = bucket.isVisible() && vs < this.limit;
 						if (visible) {
 							vs++;
 						}
@@ -279,14 +288,16 @@ public interface DurationFormatter {
 			public Strategy createStrategy(Builder builder) {
 				StrategyBuilder sb = new StrategyBuilder()
 						.add(new SetUnusedTimeUnitsInvisibleStrategy(
-								builder.maximum));
+								builder.minimum, builder.maximum));
 				sb = builder.suppressZeros.contains(SuppressZeros.LEADING) ? sb
 						.add(new RemoveLeadingZerosStrategy()) : sb;
 				sb = builder.suppressZeros.contains(SuppressZeros.TRAILING) ? sb
 						.add(new RemoveTrailingZerosStrategy()) : sb;
 				sb = builder.suppressZeros.contains(SuppressZeros.MIDDLE) ? sb
 						.add(new RemoveMiddleZerosStrategy()) : sb;
-				sb.add(new LimitStrategy());
+				sb = builder.maximumAmountOfUnitsToShow > 0 ? sb
+						.add(new LimitStrategy(
+								builder.maximumAmountOfUnitsToShow)) : sb;
 				sb = builder.round ? sb.add(new RoundStrategy()) : sb;
 				sb.add(new PullFromLeftStrategy());
 				return sb.build();
