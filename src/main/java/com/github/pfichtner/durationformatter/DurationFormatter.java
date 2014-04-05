@@ -253,7 +253,6 @@ public interface DurationFormatter {
 
 			private final String separator;
 			private final String valueSymbolSeparator;
-			private final int maximumAmountOfUnitsToShow;
 			private final int idxMin;
 			private final TimeUnit timeUnitMin;
 			private final TimeUnit timeUnitMax;
@@ -282,7 +281,6 @@ public interface DurationFormatter {
 				this.symbols = Collections
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.symbols));
-				this.maximumAmountOfUnitsToShow = builder.maximumAmountOfUnitsToShow;
 			}
 
 			public Strategy createStrategy(Builder builder) {
