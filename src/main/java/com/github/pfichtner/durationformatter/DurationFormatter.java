@@ -128,7 +128,17 @@ public interface DurationFormatter {
 		private static class DefaultDurationFormatter implements
 				DurationFormatter {
 
-			public static class SetUnusedTimeUnitsInvisibleStrategy implements
+			protected static <T> int count(Iterable<T> buckets) {
+				int cnt = 0;
+				for (Iterator<T> iterator = buckets.iterator(); iterator
+						.hasNext();) {
+					iterator.next();
+					cnt++;
+				}
+				return cnt;
+			}
+
+			private static class SetUnusedTimeUnitsInvisibleStrategy implements
 					Strategy {
 
 				private final TimeUnit minimum;
@@ -152,32 +162,79 @@ public interface DurationFormatter {
 
 			}
 
-			public class RemoveLeadingZerosStrategy implements Strategy {
+			private static abstract class RemoveZerosStrategy implements
+					Strategy {
 
-				public TimeValues apply(TimeValues values) {
-					return removeZeros(values,
-							values.sequence(timeUnitMax, timeUnitMin));
+				protected final TimeUnit minimum;
+				protected final TimeUnit maximum;
+
+				public RemoveZerosStrategy(TimeUnit minimum, TimeUnit maximum) {
+					this.minimum = minimum;
+					this.maximum = maximum;
+				}
+
+				protected TimeValues removeZeros(TimeValues values,
+						Iterable<Bucket> buckets) {
+					int idx = 0;
+					int hi = count(buckets);
+					for (Bucket bucket : buckets) {
+						if (++idx == hi || bucket.isVisible()
+								&& bucket.getValue() != 0) {
+							break;
+						}
+						bucket.setVisible(false);
+
+					}
+					return values;
 				}
 
 			}
 
-			public class RemoveTrailingZerosStrategy implements Strategy {
+			private static class RemoveLeadingZerosStrategy extends
+					RemoveZerosStrategy {
+
+				public RemoveLeadingZerosStrategy(TimeUnit minimum,
+						TimeUnit maximum) {
+					super(minimum, maximum);
+				}
 
 				public TimeValues apply(TimeValues values) {
 					return removeZeros(values,
-							values.sequence(timeUnitMin, timeUnitMax));
+							values.sequence(maximum, minimum));
 				}
 
 			}
 
-			public class RemoveMiddleZerosStrategy implements Strategy {
+			private static class RemoveTrailingZerosStrategy extends
+					RemoveZerosStrategy {
+
+				public RemoveTrailingZerosStrategy(TimeUnit minimum,
+						TimeUnit maximum) {
+					super(minimum, maximum);
+				}
 
 				public TimeValues apply(TimeValues values) {
-					Iterable<Bucket> sequence = values.sequence(timeUnitMax,
-							timeUnitMin);
+					return removeZeros(values,
+							values.sequence(minimum, maximum));
+				}
+
+			}
+
+			private static class RemoveMiddleZerosStrategy extends
+					RemoveZerosStrategy {
+
+				public RemoveMiddleZerosStrategy(TimeUnit minimum,
+						TimeUnit maximum) {
+					super(minimum, maximum);
+					// TODO Auto-generated constructor stub
+				}
+
+				public TimeValues apply(TimeValues values) {
+					Iterable<Bucket> sequence = values.sequence(maximum,
+							minimum);
 					TimeUnit firstNonZero = findFirstVisibleNonZero(sequence);
 					TimeUnit lastNonZero = findFirstVisibleNonZero(values
-							.sequence(timeUnitMin, timeUnitMax));
+							.sequence(minimum, maximum));
 					if (firstNonZero != null && lastNonZero != null) {
 						for (Bucket bucket : values.sequence(firstNonZero,
 								lastNonZero)) {
@@ -189,11 +246,25 @@ public interface DurationFormatter {
 					return values;
 				}
 
+				private TimeUnit findFirstVisibleNonZero(
+						Iterable<Bucket> buckets) {
+					int idx = 0;
+					int hi = count(buckets);
+					for (Bucket bucket : buckets) {
+						if (++idx == hi) {
+							return null;
+						} else if (bucket.isVisible() && bucket.getValue() != 0) {
+							return bucket.getTimeUnit();
+						}
+					}
+					return null;
+				}
+
 			}
 
-			public static class LimitStrategy implements Strategy {
+			private static class LimitStrategy implements Strategy {
 
-				private int limit;
+				private final int limit;
 
 				public LimitStrategy(int limit) {
 					this.limit = limit;
@@ -213,7 +284,7 @@ public interface DurationFormatter {
 
 			}
 
-			public static class RoundingStrategy implements Strategy {
+			private static class RoundingStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
 					// search first invisible
@@ -231,7 +302,7 @@ public interface DurationFormatter {
 
 			}
 
-			public static class PullFromLeftStrategy implements Strategy {
+			private static class PullFromLeftStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
 					// findFirstVisible and pull from left
@@ -254,8 +325,6 @@ public interface DurationFormatter {
 			private final String separator;
 			private final String valueSymbolSeparator;
 			private final int idxMin;
-			private final TimeUnit timeUnitMin;
-			private final TimeUnit timeUnitMax;
 			private final Map<TimeUnit, String> formats;
 			private final Map<TimeUnit, String> symbols;
 
@@ -268,8 +337,6 @@ public interface DurationFormatter {
 				int idxMax = indexOf(timeUnits, builder.maximum);
 				checkState(this.idxMin > idxMax,
 						"min must not be greater than max");
-				this.timeUnitMin = timeUnits.get(this.idxMin);
-				this.timeUnitMax = timeUnits.get(idxMax);
 				this.separator = builder.separator;
 				this.valueSymbolSeparator = builder.valueSymbolSeparator;
 
@@ -288,11 +355,14 @@ public interface DurationFormatter {
 						.add(new SetUnusedTimeUnitsInvisibleStrategy(
 								builder.minimum, builder.maximum));
 				sb = builder.suppressZeros.contains(SuppressZeros.LEADING) ? sb
-						.add(new RemoveLeadingZerosStrategy()) : sb;
+						.add(new RemoveLeadingZerosStrategy(builder.minimum,
+								builder.maximum)) : sb;
 				sb = builder.suppressZeros.contains(SuppressZeros.TRAILING) ? sb
-						.add(new RemoveTrailingZerosStrategy()) : sb;
+						.add(new RemoveTrailingZerosStrategy(builder.minimum,
+								builder.maximum)) : sb;
 				sb = builder.suppressZeros.contains(SuppressZeros.MIDDLE) ? sb
-						.add(new RemoveMiddleZerosStrategy()) : sb;
+						.add(new RemoveMiddleZerosStrategy(builder.minimum,
+								builder.maximum)) : sb;
 				sb = builder.maximumAmountOfUnitsToShow > 0 ? sb
 						.add(new LimitStrategy(
 								builder.maximumAmountOfUnitsToShow)) : sb;
@@ -337,44 +407,6 @@ public interface DurationFormatter {
 				int len = sb.length();
 				return len == 0 ? "" : sb.delete(len - separator.length(), len)
 						.toString();
-			}
-
-			private TimeUnit findFirstVisibleNonZero(Iterable<Bucket> buckets) {
-				int idx = 0;
-				int hi = count(buckets);
-				for (Bucket bucket : buckets) {
-					if (++idx == hi) {
-						return null;
-					} else if (bucket.isVisible() && bucket.getValue() != 0) {
-						return bucket.getTimeUnit();
-					}
-				}
-				return null;
-			}
-
-			public TimeValues removeZeros(TimeValues values,
-					Iterable<Bucket> buckets) {
-				int idx = 0;
-				int hi = count(buckets);
-				for (Bucket bucket : buckets) {
-					if (++idx == hi || bucket.isVisible()
-							&& bucket.getValue() != 0) {
-						break;
-					}
-					bucket.setVisible(false);
-
-				}
-				return values;
-			}
-
-			private int count(Iterable<Bucket> buckets) {
-				int cnt = 0;
-				for (Iterator<Bucket> iterator = buckets.iterator(); iterator
-						.hasNext();) {
-					iterator.next();
-					cnt++;
-				}
-				return cnt;
 			}
 
 			private String getValueString(long value, TimeUnit timeUnit) {
