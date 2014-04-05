@@ -8,6 +8,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -25,6 +26,51 @@ import com.github.pfichtner.durationformatter.TimeValues.Bucket;
  * @author Peter Fichtner
  */
 public interface DurationFormatter {
+
+	static class StrategyBuilder {
+
+		private List<Strategy> strategies = new ArrayList<Strategy>();
+
+		public StrategyBuilder add(Strategy strategy) {
+			this.strategies.add(strategy);
+			return this;
+		}
+
+		public Strategy build() {
+			return new ComposedStrategy(this.strategies);
+		}
+
+	}
+
+	static interface Strategy {
+
+		Strategy NULL = new Strategy() {
+			public TimeValues apply(TimeValues values) {
+				return values;
+			}
+		};
+
+		TimeValues apply(TimeValues values);
+
+	}
+
+	static class ComposedStrategy implements Strategy {
+
+		private List<Strategy> strategies;
+
+		ComposedStrategy(List<Strategy> strategies) {
+			this.strategies = strategies;
+		}
+
+		public TimeValues apply(TimeValues values) {
+			TimeValues result = values;
+			for (Strategy strategy : strategies) {
+				result = strategy.apply(result);
+			}
+			return result;
+		}
+
+	}
 
 	public enum SuppressZeros {
 		LEADING, TRAILING, MIDDLE
@@ -81,17 +127,121 @@ public interface DurationFormatter {
 		private static class DefaultDurationFormatter implements
 				DurationFormatter {
 
+			public class RestrictToStrategy implements Strategy {
+
+				public TimeValues apply(TimeValues values) {
+					for (Bucket bucket : values) {
+						bucket.setVisible(usedTimeUnits.contains(bucket
+								.getTimeUnit()));
+					}
+					return values;
+				}
+
+			}
+
+			public class RemoveLeadingStrategy implements Strategy {
+
+				public TimeValues apply(TimeValues values) {
+					return removeZeros(
+							values,
+							removeZeros(values,
+									values.sequence(timeUnitMax, timeUnitMin)));
+				}
+
+			}
+
+			public class RemoveTrailingStrategy implements Strategy {
+
+				public TimeValues apply(TimeValues values) {
+					return removeZeros(values,
+							values.sequence(timeUnitMin, timeUnitMax));
+				}
+
+			}
+
+			public class RemoveMiddleStrategy implements Strategy {
+
+				public TimeValues apply(TimeValues values) {
+					Iterable<Bucket> sequence = values.sequence(timeUnitMax,
+							timeUnitMin);
+					TimeUnit firstNonZero = findFirstVisibleNonZero(sequence);
+					TimeUnit lastNonZero = findFirstVisibleNonZero(values
+							.sequence(timeUnitMin, timeUnitMax));
+					if (firstNonZero != null && lastNonZero != null) {
+						for (Bucket bucket : values.sequence(firstNonZero,
+								lastNonZero)) {
+							if (bucket.isVisible() && bucket.getValue() == 0) {
+								bucket.setVisible(false);
+							}
+						}
+					}
+					return values;
+				}
+
+			}
+
+			public class LimitStrategy implements Strategy {
+
+				public TimeValues apply(TimeValues values) {
+					int vs = 0;
+					for (Bucket bucket : values) {
+						if (bucket != null) {
+							boolean visible = bucket.isVisible()
+									&& vs < maximumAmountOfUnitsToShow
+									&& timeUnitMin.compareTo(bucket
+											.getTimeUnit()) <= 0;
+							if (visible) {
+								vs++;
+							}
+							bucket.setVisible(visible);
+						}
+					}
+					return values;
+				}
+
+			}
+
+			public class RoundStrategy implements Strategy {
+
+				public TimeValues apply(TimeValues values) {
+					// search first invisible
+					boolean visibleFound = false;
+					for (Bucket bucket : values) {
+						boolean bucketIsVisible = bucket.isVisible();
+						if (!bucketIsVisible && visibleFound) {
+							bucket.pushLeftRounded();
+							break;
+						}
+						visibleFound |= bucketIsVisible;
+					}
+					return values;
+				}
+
+			}
+
+			public static class PullFromLeftStrategy implements Strategy {
+
+				public TimeValues apply(TimeValues values) {
+					// findFirstVisible and pull from left
+					for (Bucket bucket : values) {
+						boolean visible = bucket.isVisible();
+						if (visible) {
+							bucket.pollFromLeft();
+							break;
+						}
+					}
+					return values;
+				}
+
+			}
+
 			private List<TimeUnit> timeUnits = TimeUnits.timeUnits;
 
 			private static final String DEFAULT_FORMAT = "%02d";
 
-			private final boolean round;
 			private final List<TimeUnit> usedTimeUnits;
 			private final String separator;
 			private final String valueSymbolSeparator;
-			private final boolean suppressLeading;
-			private final boolean suppressTrailing;
-			private final boolean suppressMiddle;
 			private final int maximumAmountOfUnitsToShow;
 			private final int idxMin;
 			private final TimeUnit timeUnitMin;
@@ -99,8 +249,9 @@ public interface DurationFormatter {
 			private final Map<TimeUnit, String> formats;
 			private final Map<TimeUnit, String> symbols;
 
+			private final Strategy strategy;
+
 			public DefaultDurationFormatter(Builder builder) {
-				this.round = builder.round;
 				checkState(builder.minimum.compareTo(builder.maximum) <= 0,
 						"maximum must not be smaller than minimum");
 				this.idxMin = indexOf(timeUnits, builder.minimum);
@@ -113,12 +264,9 @@ public interface DurationFormatter {
 						.subList(idxMax, timeUnits.size());
 				this.separator = builder.separator;
 				this.valueSymbolSeparator = builder.valueSymbolSeparator;
-				this.suppressLeading = builder.suppressZeros
-						.contains(SuppressZeros.LEADING);
-				this.suppressTrailing = builder.suppressZeros
-						.contains(SuppressZeros.TRAILING);
-				this.suppressMiddle = builder.suppressZeros
-						.contains(SuppressZeros.MIDDLE);
+
+				this.strategy = createStrategy(builder);
+
 				this.formats = Collections
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.formats));
@@ -126,6 +274,21 @@ public interface DurationFormatter {
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.symbols));
 				this.maximumAmountOfUnitsToShow = builder.maximumAmountOfUnitsToShow;
+			}
+
+			public Strategy createStrategy(Builder builder) {
+				StrategyBuilder sb = new StrategyBuilder().add(
+						new RestrictToStrategy()).add(new RestrictToStrategy());
+				sb = builder.suppressZeros.contains(SuppressZeros.LEADING) ? sb
+						.add(new RemoveLeadingStrategy()) : sb;
+				sb = builder.suppressZeros.contains(SuppressZeros.TRAILING) ? sb
+						.add(new RemoveTrailingStrategy()) : sb;
+				sb = builder.suppressZeros.contains(SuppressZeros.MIDDLE) ? sb
+						.add(new RemoveMiddleStrategy()) : sb;
+				sb.add(new LimitStrategy());
+				sb = builder.round ? sb.add(new RoundStrategy()) : sb;
+				sb.add(new PullFromLeftStrategy());
+				return sb.build();
 			}
 
 			/**
@@ -148,44 +311,7 @@ public interface DurationFormatter {
 			 * @return String containing the duration
 			 */
 			public String format(long longVal, TimeUnit timeUnit) {
-				return join(pullFromLeft(round(limit(setZerosInvisible(restrictToSetUnitRange(new TimeValues(
-						longVal, timeUnit)))))));
-			}
-
-			private TimeValues pullFromLeft(TimeValues values) {
-				// findFirstVisible and pull from left
-				for (Bucket bucket : values) {
-					boolean visible = bucket.isVisible();
-					if (visible) {
-						bucket.pollFromLeft();
-						break;
-					}
-				}
-				return values;
-			}
-
-			private TimeValues restrictToSetUnitRange(TimeValues values) {
-				for (Bucket bucket : values) {
-					bucket.setVisible(this.usedTimeUnits.contains(bucket
-							.getTimeUnit()));
-				}
-				return values;
-			}
-
-			private TimeValues round(TimeValues values) {
-				if (round) {
-					// search first invisible
-					boolean visibleFound = false;
-					for (Bucket bucket : values) {
-						boolean bucketIsVisible = bucket.isVisible();
-						if (!bucketIsVisible && visibleFound) {
-							bucket.pushLeftRounded();
-							break;
-						}
-						visibleFound |= bucketIsVisible;
-					}
-				}
-				return values;
+				return join(strategy.apply(new TimeValues(longVal, timeUnit)));
 			}
 
 			private String join(TimeValues values) {
@@ -203,29 +329,6 @@ public interface DurationFormatter {
 						.toString();
 			}
 
-			private TimeValues setZerosInvisible(TimeValues values) {
-				return removeMiddle(removeTrailingZeros(removeLeadingZeros(values)));
-			}
-
-			private TimeValues removeMiddle(TimeValues values) {
-				if (suppressMiddle) {
-					Iterable<Bucket> sequence = values.sequence(timeUnitMax,
-							timeUnitMin);
-					TimeUnit firstNonZero = findFirstVisibleNonZero(sequence);
-					TimeUnit lastNonZero = findFirstVisibleNonZero(values
-							.sequence(timeUnitMin, timeUnitMax));
-					if (firstNonZero != null && lastNonZero != null) {
-						for (Bucket bucket : values.sequence(firstNonZero,
-								lastNonZero)) {
-							if (bucket.isVisible() && bucket.getValue() == 0) {
-								bucket.setVisible(false);
-							}
-						}
-					}
-				}
-				return values;
-			}
-
 			private TimeUnit findFirstVisibleNonZero(Iterable<Bucket> buckets) {
 				int idx = 0;
 				int hi = this.usedTimeUnits.size();
@@ -239,16 +342,6 @@ public interface DurationFormatter {
 				return null;
 			}
 
-			private TimeValues removeTrailingZeros(TimeValues values) {
-				return suppressTrailing ? removeZeros(values,
-						values.sequence(timeUnitMin, timeUnitMax)) : values;
-			}
-
-			private TimeValues removeLeadingZeros(TimeValues values) {
-				return suppressLeading ? removeZeros(values,
-						values.sequence(timeUnitMax, timeUnitMin)) : values;
-			}
-
 			public TimeValues removeZeros(TimeValues values,
 					Iterable<Bucket> buckets) {
 				int idx = 0;
@@ -260,23 +353,6 @@ public interface DurationFormatter {
 					}
 					bucket.setVisible(false);
 
-				}
-				return values;
-			}
-
-			private TimeValues limit(TimeValues values) {
-				int vs = 0;
-				for (Bucket bucket : values) {
-					if (bucket != null) {
-						boolean visible = bucket.isVisible()
-								&& vs < this.maximumAmountOfUnitsToShow
-								&& this.timeUnitMin.compareTo(bucket
-										.getTimeUnit()) <= 0;
-						if (visible) {
-							vs++;
-						}
-						bucket.setVisible(visible);
-					}
 				}
 				return values;
 			}
