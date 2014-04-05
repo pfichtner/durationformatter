@@ -213,7 +213,7 @@ public interface DurationFormatter {
 
 			}
 
-			public static class RoundStrategy implements Strategy {
+			public static class RoundingStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
 					// search first invisible
@@ -296,7 +296,7 @@ public interface DurationFormatter {
 				sb = builder.maximumAmountOfUnitsToShow > 0 ? sb
 						.add(new LimitStrategy(
 								builder.maximumAmountOfUnitsToShow)) : sb;
-				sb = builder.round ? sb.add(new RoundStrategy()) : sb;
+				sb = builder.round ? sb.add(new RoundingStrategy()) : sb;
 				sb.add(new PullFromLeftStrategy());
 				return sb.build();
 			}
