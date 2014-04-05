@@ -6,7 +6,7 @@ import java.util.ListIterator;
 
 public class ReverseIterator<T> implements Iterator<T> {
 
-	private ListIterator<T> delegate;
+	private final ListIterator<T> delegate;
 
 	public ReverseIterator(List<T> list) {
 		this(list.listIterator(list.size()));
