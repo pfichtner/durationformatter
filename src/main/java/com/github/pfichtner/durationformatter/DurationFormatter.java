@@ -128,7 +128,7 @@ public interface DurationFormatter {
 		private static class DefaultDurationFormatter implements
 				DurationFormatter {
 
-			public class SetUnusedTimeUnitsInvisibleStrategy implements
+			public static class SetUnusedTimeUnitsInvisibleStrategy implements
 					Strategy {
 
 				private final TimeUnit minimum;
@@ -191,7 +191,7 @@ public interface DurationFormatter {
 
 			}
 
-			public class LimitStrategy implements Strategy {
+			public static class LimitStrategy implements Strategy {
 
 				private int limit;
 
@@ -213,7 +213,7 @@ public interface DurationFormatter {
 
 			}
 
-			public class RoundStrategy implements Strategy {
+			public static class RoundStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
 					// search first invisible
