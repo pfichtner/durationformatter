@@ -127,7 +127,8 @@ public interface DurationFormatter {
 		private static class DefaultDurationFormatter implements
 				DurationFormatter {
 
-			public class RestrictToStrategy implements Strategy {
+			public class SetUnusedTimeUnitsInvisibleStrategy implements
+					Strategy {
 
 				public TimeValues apply(TimeValues values) {
 					for (Bucket bucket : values) {
@@ -276,7 +277,7 @@ public interface DurationFormatter {
 
 			public Strategy createStrategy(Builder builder) {
 				StrategyBuilder sb = new StrategyBuilder()
-						.add(new RestrictToStrategy());
+						.add(new SetUnusedTimeUnitsInvisibleStrategy());
 				sb = builder.suppressZeros.contains(SuppressZeros.LEADING) ? sb
 						.add(new RemoveLeadingZerosStrategy()) : sb;
 				sb = builder.suppressZeros.contains(SuppressZeros.TRAILING) ? sb
