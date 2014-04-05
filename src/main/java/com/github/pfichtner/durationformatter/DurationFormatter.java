@@ -252,11 +252,12 @@ public interface DurationFormatter {
 				}
 
 				public TimeValues apply(TimeValues values) {
-					int vs = 0;
+					int visibles = 0;
 					for (Bucket bucket : values) {
-						boolean visible = bucket.isVisible() && vs < this.limit;
+						boolean visible = bucket.isVisible()
+								&& visibles < this.limit;
 						if (visible) {
-							vs++;
+							visibles++;
 						}
 						bucket.setVisible(visible);
 					}
@@ -288,8 +289,7 @@ public interface DurationFormatter {
 				public TimeValues apply(TimeValues values) {
 					// findFirstVisible and pull from left
 					for (Bucket bucket : values) {
-						boolean visible = bucket.isVisible();
-						if (visible) {
+						if (bucket.isVisible()) {
 							bucket.pollFromLeft();
 							break;
 						}
