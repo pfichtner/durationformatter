@@ -108,18 +108,33 @@ public class TimeValuesTest {
 
 	@Test
 	public void testSequenceDefaultOrder() {
-		assertEquals(Arrays.asList(DAYS, HOURS, MINUTES),
-				extract(collect(new TimeValues().sequence(DAYS, MINUTES))));
+		assertEquals(
+				Arrays.asList(DAYS, HOURS, MINUTES),
+				extract(collect(new TimeValues().sequenceInclude(DAYS, MINUTES))));
 		assertEquals(Arrays.asList(MILLISECONDS, MICROSECONDS, NANOSECONDS),
+				extract(collect(new TimeValues().sequenceInclude(MILLISECONDS,
+						NANOSECONDS))));
+
+		assertEquals(Arrays.asList(DAYS, HOURS),
+				extract(collect(new TimeValues().sequence(DAYS, MINUTES))));
+		assertEquals(Arrays.asList(MILLISECONDS, MICROSECONDS),
 				extract(collect(new TimeValues().sequence(MILLISECONDS,
 						NANOSECONDS))));
+
 	}
 
 	@Test
 	public void testSequenceReverseOrder() {
-		assertEquals(Arrays.asList(MINUTES, HOURS, DAYS),
-				extract(collect(new TimeValues().sequence(MINUTES, DAYS))));
+		assertEquals(
+				Arrays.asList(MINUTES, HOURS, DAYS),
+				extract(collect(new TimeValues().sequenceInclude(MINUTES, DAYS))));
 		assertEquals(Arrays.asList(NANOSECONDS, MICROSECONDS, MILLISECONDS),
+				extract(collect(new TimeValues().sequenceInclude(NANOSECONDS,
+						MILLISECONDS))));
+
+		assertEquals(Arrays.asList(MINUTES, HOURS),
+				extract(collect(new TimeValues().sequence(MINUTES, DAYS))));
+		assertEquals(Arrays.asList(NANOSECONDS, MICROSECONDS),
 				extract(collect(new TimeValues().sequence(NANOSECONDS,
 						MILLISECONDS))));
 	}

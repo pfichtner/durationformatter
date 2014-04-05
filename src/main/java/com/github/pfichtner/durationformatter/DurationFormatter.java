@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -128,16 +127,6 @@ public interface DurationFormatter {
 		private static class DefaultDurationFormatter implements
 				DurationFormatter {
 
-			protected static <T> int count(Iterable<T> buckets) {
-				int cnt = 0;
-				for (Iterator<T> iterator = buckets.iterator(); iterator
-						.hasNext();) {
-					iterator.next();
-					cnt++;
-				}
-				return cnt;
-			}
-
 			private static class SetUnusedTimeUnitsInvisibleStrategy implements
 					Strategy {
 
@@ -153,9 +142,9 @@ public interface DurationFormatter {
 				public TimeValues apply(TimeValues values) {
 					for (Bucket bucket : values) {
 						TimeUnit timeUnit = bucket.getTimeUnit();
-						boolean a = this.minimum.compareTo(timeUnit) <= 0;
-						boolean b = this.maximum.compareTo(timeUnit) >= 0;
-						bucket.setVisible(a && b);
+						boolean b1 = timeUnit.compareTo(this.minimum) >= 0;
+						boolean b2 = timeUnit.compareTo(this.maximum) <= 0;
+						bucket.setVisible(b1 && b2);
 					}
 					return values;
 				}
@@ -175,11 +164,8 @@ public interface DurationFormatter {
 
 				protected TimeValues removeZeros(TimeValues values,
 						Iterable<Bucket> buckets) {
-					int idx = 0;
-					int hi = count(buckets);
 					for (Bucket bucket : buckets) {
-						if (++idx == hi || bucket.isVisible()
-								&& bucket.getValue() != 0) {
+						if (bucket.isVisible() && bucket.getValue() != 0) {
 							break;
 						}
 						bucket.setVisible(false);
@@ -226,7 +212,6 @@ public interface DurationFormatter {
 				public RemoveMiddleZerosStrategy(TimeUnit minimum,
 						TimeUnit maximum) {
 					super(minimum, maximum);
-					// TODO Auto-generated constructor stub
 				}
 
 				public TimeValues apply(TimeValues values) {
@@ -236,8 +221,8 @@ public interface DurationFormatter {
 					TimeUnit lastNonZero = findFirstVisibleNonZero(values
 							.sequence(minimum, maximum));
 					if (firstNonZero != null && lastNonZero != null) {
-						for (Bucket bucket : values.sequence(firstNonZero,
-								lastNonZero)) {
+						for (Bucket bucket : values.sequenceInclude(
+								firstNonZero, lastNonZero)) {
 							if (bucket.isVisible() && bucket.getValue() == 0) {
 								bucket.setVisible(false);
 							}
@@ -248,12 +233,8 @@ public interface DurationFormatter {
 
 				private TimeUnit findFirstVisibleNonZero(
 						Iterable<Bucket> buckets) {
-					int idx = 0;
-					int hi = count(buckets);
 					for (Bucket bucket : buckets) {
-						if (++idx == hi) {
-							return null;
-						} else if (bucket.isVisible() && bucket.getValue() != 0) {
+						if (bucket.isVisible() && bucket.getValue() != 0) {
 							return bucket.getTimeUnit();
 						}
 					}

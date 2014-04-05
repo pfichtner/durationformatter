@@ -157,6 +157,15 @@ public class TimeValues implements Iterable<Bucket> {
 	public Iterable<Bucket> sequence(TimeUnit timeUnit1, TimeUnit timeUnit2) {
 		final int startIdx = bucketIdx(timeUnit1);
 		final int endIdx = bucketIdx(timeUnit2);
+		return startIdx <= endIdx ? iterable().subList(startIdx, endIdx)
+				: new ReverseIterable<Bucket>(iterable().subList(endIdx + 1,
+						startIdx + 1));
+	}
+
+	public Iterable<Bucket> sequenceInclude(TimeUnit timeUnit1,
+			TimeUnit timeUnit2) {
+		final int startIdx = bucketIdx(timeUnit1);
+		final int endIdx = bucketIdx(timeUnit2);
 		return startIdx <= endIdx ? iterable().subList(startIdx, endIdx + 1)
 				: new ReverseIterable<Bucket>(iterable().subList(endIdx,
 						startIdx + 1));
