@@ -8,18 +8,15 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import com.github.pfichtner.durationformatter.TimeValues.Bucket;
 
 /**
  * A Formatter for durations. All implementing classes have to be threadsafe.
@@ -58,6 +55,8 @@ public interface DurationFormatter {
 	 * 
 	 * @param value
 	 *            the duration to format
+	 * @param timeUnit
+	 *            the TimeUnit of <code>value</code>
 	 * @return String containing the duration
 	 */
 	String format(long value, TimeUnit timeUnit);
@@ -69,10 +68,6 @@ public interface DurationFormatter {
 	 * @author Peter Fichtner
 	 */
 	public static class Builder implements Cloneable {
-
-		private static final List<TimeUnit> timeUnits = Collections
-				.unmodifiableList(new ArrayList<TimeUnit>(
-						orderingNaturalReverse(Arrays.asList(TimeUnit.values()))));
 
 		private static final EnumSet<SuppressZeros> DEFAULT_SUPPRESS_MODE = EnumSet
 				.noneOf(SuppressZeros.class);
@@ -86,9 +81,7 @@ public interface DurationFormatter {
 		private static class DefaultDurationFormatter implements
 				DurationFormatter {
 
-			private final TimeUnit highestPrecision = getLast(timeUnits);
-
-			private static final Integer ZERO = Integer.valueOf(0);
+			private List<TimeUnit> timeUnits = TimeUnits.timeUnits;
 
 			private static final String DEFAULT_FORMAT = "%02d";
 
@@ -102,6 +95,7 @@ public interface DurationFormatter {
 			private final int maximumAmountOfUnitsToShow;
 			private final int idxMin;
 			private final TimeUnit timeUnitMin;
+			private final TimeUnit timeUnitMax;
 			private final Map<TimeUnit, String> formats;
 			private final Map<TimeUnit, String> symbols;
 
@@ -114,7 +108,9 @@ public interface DurationFormatter {
 				checkState(this.idxMin > idxMax,
 						"min must not be greater than max");
 				this.timeUnitMin = timeUnits.get(this.idxMin);
-				this.usedTimeUnits = timeUnits.subList(idxMax, this.idxMin + 1);
+				this.timeUnitMax = timeUnits.get(idxMax);
+				this.usedTimeUnits = timeUnits
+						.subList(idxMax, timeUnits.size());
 				this.separator = builder.separator;
 				this.valueSymbolSeparator = builder.valueSymbolSeparator;
 				this.suppressLeading = builder.suppressZeros
@@ -130,10 +126,6 @@ public interface DurationFormatter {
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.symbols));
 				this.maximumAmountOfUnitsToShow = builder.maximumAmountOfUnitsToShow;
-			}
-
-			private static String floor(long d, long n) {
-				return Integer.toString((int) Math.floor((double) d / n));
 			}
 
 			/**
@@ -155,102 +147,147 @@ public interface DurationFormatter {
 			 *            the duration to format
 			 * @return String containing the duration
 			 */
-			public String format(long longVal, TimeUnit srcTu) {
-				long nanos = NANOSECONDS.convert(longVal, srcTu);
+			public String format(long longVal, TimeUnit timeUnit) {
+				return join(pullFromLeft(round(limit(setZerosInvisible(restrictToSetUnitRange(new TimeValues(
+						longVal, timeUnit)))))));
+			}
 
-				StringBuilder sb = new StringBuilder();
-				LinkedHashMap<TimeUnit, Integer> values = getValues((this.round
-						&& !highestPrecision.equals(this.timeUnitMin) ? calculateRounded(nanos)
-						: nanos));
-
-				Set<Entry<TimeUnit, Integer>> entrySet = values.entrySet();
-
-				// TODO only call when needed
-				int firstNonNull = findFirstNonNull(entrySet);
-				int lastNonNull = findLastNonNull(entrySet);
-				boolean allNull = firstNonNull - lastNonNull == entrySet.size();
-
-				int idx = 0;
-				for (Iterator<Entry<TimeUnit, Integer>> iterator = entrySet
-						.iterator(); iterator.hasNext();) {
-					Entry<TimeUnit, Integer> entry = iterator.next();
-					boolean isZero = ZERO.equals(entry.getValue());
-
-					boolean suppA = isZero && this.suppressLeading
-							&& idx < firstNonNull
-							&& !(allNull && idx == entrySet.size() - 1);
-					boolean suppB = isZero && this.suppressTrailing
-							&& idx > lastNonNull & !(allNull && idx == 0);
-					boolean suppC = isZero && this.suppressMiddle
-							&& idx > firstNonNull && idx < lastNonNull;
-					boolean suppD = idx >= this.maximumAmountOfUnitsToShow;
-
-					if (!(suppA || suppB || suppC || suppD)) {
-						sb.append(
-								getValueString(entry.getValue(), entry.getKey()))
-								.append(this.separator);
+			private TimeValues pullFromLeft(TimeValues values) {
+				// findFirstVisible and pull from left
+				for (Bucket bucket : values) {
+					boolean visible = bucket.isVisible();
+					if (visible) {
+						bucket.pollFromLeft();
+						break;
 					}
-					idx++;
 				}
-				return sb.length() == 0 ? "" : sb.delete(
-						sb.length() - this.separator.length(), sb.length())
+				return values;
+			}
+
+			private TimeValues restrictToSetUnitRange(TimeValues values) {
+				for (Bucket bucket : values) {
+					bucket.setVisible(this.usedTimeUnits.contains(bucket
+							.getTimeUnit()));
+				}
+				return values;
+			}
+
+			private TimeValues round(TimeValues values) {
+				if (round) {
+					// search first invisible
+					boolean visibleFound = false;
+					for (Bucket bucket : values) {
+						boolean bucketIsVisible = bucket.isVisible();
+						if (!bucketIsVisible && visibleFound) {
+							bucket.pushLeftRounded();
+							break;
+						}
+						visibleFound |= bucketIsVisible;
+					}
+				}
+				return values;
+			}
+
+			private String join(TimeValues values) {
+				StringBuilder sb = new StringBuilder();
+				for (Bucket bucket : values) {
+					if (bucket.isVisible()) {
+						sb.append(
+								getValueString(bucket.getValue(),
+										bucket.getTimeUnit())).append(
+								this.separator);
+					}
+				}
+				int len = sb.length();
+				return len == 0 ? "" : sb.delete(len - separator.length(), len)
 						.toString();
 			}
 
-			private int findFirstNonNull(Set<Entry<TimeUnit, Integer>> entrySet) {
+			private TimeValues setZerosInvisible(TimeValues values) {
+				return removeMiddle(removeTrailingZeros(removeLeadingZeros(values)));
+			}
+
+			private TimeValues removeMiddle(TimeValues values) {
+				if (suppressMiddle) {
+					Iterable<Bucket> sequence = values.sequence(timeUnitMax,
+							timeUnitMin);
+					TimeUnit firstNonZero = findFirstVisibleNonZero(sequence);
+					TimeUnit lastNonZero = findFirstVisibleNonZero(values
+							.sequence(timeUnitMin, timeUnitMax));
+					if (firstNonZero != null && lastNonZero != null) {
+						for (Bucket bucket : values.sequence(firstNonZero,
+								lastNonZero)) {
+							if (bucket.isVisible() && bucket.getValue() == 0) {
+								bucket.setVisible(false);
+							}
+						}
+					}
+				}
+				return values;
+			}
+
+			private TimeUnit findFirstVisibleNonZero(Iterable<Bucket> buckets) {
 				int idx = 0;
-				for (Entry<TimeUnit, Integer> entry : entrySet) {
-					if (!isZero(entry.getValue())) {
-						return idx;
+				int hi = this.usedTimeUnits.size();
+				for (Bucket bucket : buckets) {
+					if (++idx == hi) {
+						return null;
+					} else if (bucket.isVisible() && bucket.getValue() != 0) {
+						return bucket.getTimeUnit();
 					}
-					idx++;
 				}
-				return entrySet.size();
+				return null;
 			}
 
-			private int findLastNonNull(Set<Entry<TimeUnit, Integer>> entrySet) {
-				int idx = 0, result = 0;
-				for (Entry<TimeUnit, Integer> entry : entrySet) {
-					if (!isZero(entry.getValue())) {
-						result = idx;
+			private TimeValues removeTrailingZeros(TimeValues values) {
+				return suppressTrailing ? removeZeros(values,
+						values.sequence(timeUnitMin, timeUnitMax)) : values;
+			}
+
+			private TimeValues removeLeadingZeros(TimeValues values) {
+				return suppressLeading ? removeZeros(values,
+						values.sequence(timeUnitMax, timeUnitMin)) : values;
+			}
+
+			public TimeValues removeZeros(TimeValues values,
+					Iterable<Bucket> buckets) {
+				int idx = 0;
+				int hi = this.usedTimeUnits.size();
+				for (Bucket bucket : buckets) {
+					if (++idx == hi || bucket.isVisible()
+							&& bucket.getValue() != 0) {
+						break;
 					}
-					idx++;
+					bucket.setVisible(false);
+
 				}
-				return result;
+				return values;
 			}
 
-			private static boolean isZero(Integer v) {
-				return ZERO.equals(v);
+			private TimeValues limit(TimeValues values) {
+				int vs = 0;
+				for (Bucket bucket : values) {
+					if (bucket != null) {
+						boolean visible = bucket.isVisible()
+								&& vs < this.maximumAmountOfUnitsToShow
+								&& this.timeUnitMin.compareTo(bucket
+										.getTimeUnit()) <= 0;
+						if (visible) {
+							vs++;
+						}
+						bucket.setVisible(visible);
+					}
+				}
+				return values;
 			}
 
-			private String getValueString(Integer value, TimeUnit timeUnit) {
+			private String getValueString(long value, TimeUnit timeUnit) {
 				String format = this.formats.get(timeUnit);
 				String symbol = this.symbols.get(timeUnit);
 				String stringVal = String.format(
 						format == null ? DEFAULT_FORMAT : format, value);
 				return symbol == null ? stringVal : stringVal
 						+ this.valueSymbolSeparator + symbol;
-			}
-
-			private long calculateRounded(long value) {
-				TimeUnit smaller = timeUnits.get(this.idxMin + 1);
-				long add = smaller.convert(1, this.timeUnitMin) / 2;
-				return value + NANOSECONDS.convert(add, smaller);
-			}
-
-			private LinkedHashMap<TimeUnit, Integer> getValues(long lonVal) {
-				LinkedHashMap<TimeUnit, Integer> strings = new LinkedHashMap<TimeUnit, Integer>(
-						this.usedTimeUnits.size(), 1f);
-				long actual = lonVal;
-				for (TimeUnit timeUnit : this.usedTimeUnits) {
-					long longVal = timeUnit.toNanos(1);
-					strings.put(
-							timeUnit,
-							actual >= longVal ? Integer.valueOf(floor(actual,
-									longVal)) : ZERO);
-					actual %= longVal;
-				}
-				return strings;
 			}
 
 		}
@@ -335,8 +372,8 @@ public interface DurationFormatter {
 		/**
 		 * Sets the separator between the value and timeunit
 		 * 
-		 * @param separator
-		 *            separator to use
+		 * @param valueSymbolSeparator
+		 *            symbolSeparator to use
 		 * @return new Builder instance
 		 */
 		public Builder valueSymbolSeparator(String valueSymbolSeparator) {
@@ -347,7 +384,7 @@ public interface DurationFormatter {
 
 		public Builder format(String format) {
 			Builder clone = clone();
-			for (TimeUnit timeUnit : timeUnits) {
+			for (TimeUnit timeUnit : TimeUnits.timeUnits) {
 				clone = clone.format(timeUnit, format);
 			}
 			return clone;
@@ -415,11 +452,6 @@ public interface DurationFormatter {
 			}
 		}
 
-		private static <T> T getLast(List<T> ts) {
-			int size = ts.size();
-			return size == 0 ? null : ts.get(size - 1);
-		}
-
 		private static <T> int indexOf(List<T> ts, Object search) {
 			int i = 0;
 			for (T t : ts) {
@@ -429,12 +461,6 @@ public interface DurationFormatter {
 				i++;
 			}
 			return -1;
-		}
-
-		private static <T> List<T> orderingNaturalReverse(List<T> ts) {
-			List<T> result = new ArrayList<T>(ts);
-			Collections.sort(result, Collections.<T> reverseOrder());
-			return result;
 		}
 
 	}
