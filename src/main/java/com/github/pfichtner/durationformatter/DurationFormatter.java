@@ -299,13 +299,10 @@ public interface DurationFormatter {
 
 			}
 
-			private List<TimeUnit> timeUnits = TimeUnits.timeUnits;
-
 			private static final String DEFAULT_FORMAT = "%02d";
 
 			private final String separator;
 			private final String valueSymbolSeparator;
-			private final int idxMin;
 			private final Map<TimeUnit, String> formats;
 			private final Map<TimeUnit, String> symbols;
 
@@ -314,10 +311,9 @@ public interface DurationFormatter {
 			public DefaultDurationFormatter(Builder builder) {
 				checkState(builder.minimum.compareTo(builder.maximum) <= 0,
 						"maximum must not be smaller than minimum");
-				this.idxMin = indexOf(timeUnits, builder.minimum);
-				int idxMax = indexOf(timeUnits, builder.maximum);
-				checkState(this.idxMin > idxMax,
-						"min must not be greater than max");
+				int idxMin = indexOf(TimeUnits.timeUnits, builder.minimum);
+				int idxMax = indexOf(TimeUnits.timeUnits, builder.maximum);
+				checkState(idxMin > idxMax, "min must not be greater than max");
 				this.separator = builder.separator;
 				this.valueSymbolSeparator = builder.valueSymbolSeparator;
 
