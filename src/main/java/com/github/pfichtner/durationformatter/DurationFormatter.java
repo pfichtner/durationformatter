@@ -142,10 +142,8 @@ public interface DurationFormatter {
 			public class RemoveLeadingStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
-					return removeZeros(
-							values,
-							removeZeros(values,
-									values.sequence(timeUnitMax, timeUnitMin)));
+					return removeZeros(values,
+							values.sequence(timeUnitMax, timeUnitMin));
 				}
 
 			}
