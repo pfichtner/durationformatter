@@ -115,17 +115,43 @@ public class DurationFormatterTest {
 		DurationFormatter fb3 = Builder.SYMBOLS.maximum(DAYS)
 				.maximumAmountOfUnitsToShow(1).build();
 
-		
-		long value = TimeUnit.DAYS.toMillis(3) + TimeUnit.HOURS.toMillis(2)
-				+ TimeUnit.SECONDS.toMillis(1);
+		{
+			long value = TimeUnit.DAYS.toMillis(3);
 
-		assertEquals("03:02:00:01", fa1.formatMillis(value));
-		assertEquals("03:02", fa2.formatMillis(value));
-		assertEquals("03", fa3.formatMillis(value));
+			assertEquals("03:00:00:00", fa1.formatMillis(value));
+			assertEquals("03:00", fa2.formatMillis(value));
+			assertEquals("03", fa3.formatMillis(value));
 
-		assertEquals("3d 2h 0min 1s", fb1.formatMillis(value));
-		assertEquals("3d 2h", fb2.formatMillis(value));
-		assertEquals("3d", fb3.formatMillis(value));
+			assertEquals("3d 0h 0min 0s", fb1.formatMillis(value));
+			assertEquals("3d 0h", fb2.formatMillis(value));
+			assertEquals("3d", fb3.formatMillis(value));
+		}
+
+		{
+			long value = TimeUnit.DAYS.toMillis(3)
+					+ TimeUnit.SECONDS.toMillis(1);
+
+			assertEquals("03:00:00:01", fa1.formatMillis(value));
+			assertEquals("03:00", fa2.formatMillis(value));
+			assertEquals("03", fa3.formatMillis(value));
+
+			assertEquals("3d 0h 0min 1s", fb1.formatMillis(value));
+			assertEquals("3d 0h", fb2.formatMillis(value));
+			assertEquals("3d", fb3.formatMillis(value));
+		}
+
+		{
+			long value = TimeUnit.DAYS.toMillis(3) + TimeUnit.HOURS.toMillis(2)
+					+ TimeUnit.SECONDS.toMillis(1);
+
+			assertEquals("03:02:00:01", fa1.formatMillis(value));
+			assertEquals("03:02", fa2.formatMillis(value));
+			assertEquals("03", fa3.formatMillis(value));
+
+			assertEquals("3d 2h 0min 1s", fb1.formatMillis(value));
+			assertEquals("3d 2h", fb2.formatMillis(value));
+			assertEquals("3d", fb3.formatMillis(value));
+		}
 
 	}
 
