@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -130,10 +131,16 @@ public interface DurationFormatter {
 			public class SetUnusedTimeUnitsInvisibleStrategy implements
 					Strategy {
 
+				private TimeUnit maximum;
+
+				public SetUnusedTimeUnitsInvisibleStrategy(TimeUnit maximum) {
+					this.maximum = maximum;
+				}
+
 				public TimeValues apply(TimeValues values) {
 					for (Bucket bucket : values) {
-						bucket.setVisible(usedTimeUnits.contains(bucket
-								.getTimeUnit()));
+						bucket.setVisible(this.maximum.compareTo(bucket
+								.getTimeUnit()) >= 0);
 					}
 					return values;
 				}
@@ -235,7 +242,6 @@ public interface DurationFormatter {
 
 			private static final String DEFAULT_FORMAT = "%02d";
 
-			private final List<TimeUnit> usedTimeUnits;
 			private final String separator;
 			private final String valueSymbolSeparator;
 			private final int maximumAmountOfUnitsToShow;
@@ -256,8 +262,6 @@ public interface DurationFormatter {
 						"min must not be greater than max");
 				this.timeUnitMin = timeUnits.get(this.idxMin);
 				this.timeUnitMax = timeUnits.get(idxMax);
-				this.usedTimeUnits = timeUnits
-						.subList(idxMax, timeUnits.size());
 				this.separator = builder.separator;
 				this.valueSymbolSeparator = builder.valueSymbolSeparator;
 
@@ -274,7 +278,8 @@ public interface DurationFormatter {
 
 			public Strategy createStrategy(Builder builder) {
 				StrategyBuilder sb = new StrategyBuilder()
-						.add(new SetUnusedTimeUnitsInvisibleStrategy());
+						.add(new SetUnusedTimeUnitsInvisibleStrategy(
+								builder.maximum));
 				sb = builder.suppressZeros.contains(SuppressZeros.LEADING) ? sb
 						.add(new RemoveLeadingZerosStrategy()) : sb;
 				sb = builder.suppressZeros.contains(SuppressZeros.TRAILING) ? sb
@@ -327,7 +332,7 @@ public interface DurationFormatter {
 
 			private TimeUnit findFirstVisibleNonZero(Iterable<Bucket> buckets) {
 				int idx = 0;
-				int hi = this.usedTimeUnits.size();
+				int hi = count(buckets);
 				for (Bucket bucket : buckets) {
 					if (++idx == hi) {
 						return null;
@@ -341,7 +346,7 @@ public interface DurationFormatter {
 			public TimeValues removeZeros(TimeValues values,
 					Iterable<Bucket> buckets) {
 				int idx = 0;
-				int hi = this.usedTimeUnits.size();
+				int hi = count(buckets);
 				for (Bucket bucket : buckets) {
 					if (++idx == hi || bucket.isVisible()
 							&& bucket.getValue() != 0) {
@@ -351,6 +356,16 @@ public interface DurationFormatter {
 
 				}
 				return values;
+			}
+
+			private int count(Iterable<Bucket> buckets) {
+				int cnt = 0;
+				for (Iterator<Bucket> iterator = buckets.iterator(); iterator
+						.hasNext();) {
+					iterator.next();
+					cnt++;
+				}
+				return cnt;
 			}
 
 			private String getValueString(long value, TimeUnit timeUnit) {
