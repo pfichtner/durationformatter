@@ -277,8 +277,8 @@ public interface DurationFormatter {
 			}
 
 			public Strategy createStrategy(Builder builder) {
-				StrategyBuilder sb = new StrategyBuilder().add(
-						new RestrictToStrategy()).add(new RestrictToStrategy());
+				StrategyBuilder sb = new StrategyBuilder()
+						.add(new RestrictToStrategy());
 				sb = builder.suppressZeros.contains(SuppressZeros.LEADING) ? sb
 						.add(new RemoveLeadingStrategy()) : sb;
 				sb = builder.suppressZeros.contains(SuppressZeros.TRAILING) ? sb
