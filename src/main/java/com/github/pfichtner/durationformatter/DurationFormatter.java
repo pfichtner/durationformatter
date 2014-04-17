@@ -127,6 +127,12 @@ public interface DurationFormatter {
 		private static class DefaultDurationFormatter implements
 				DurationFormatter {
 
+			/**
+			 * This strategy marks fields between {@link #minimum} and
+			 * {@link #maximum} as visible all others as invisible.
+			 * 
+			 * @author Peter Fichtner
+			 */
 			private static class SetUnusedTimeUnitsInvisibleStrategy implements
 					Strategy {
 
@@ -151,6 +157,11 @@ public interface DurationFormatter {
 
 			}
 
+			/**
+			 * An abstract strategy that marks zeros as invisible.
+			 * 
+			 * @author Peter Fichtner
+			 */
 			private static abstract class RemoveZerosStrategy implements
 					Strategy {
 
@@ -176,6 +187,11 @@ public interface DurationFormatter {
 
 			}
 
+			/**
+			 * Strategy that marks leading zeros as invisible.
+			 * 
+			 * @author Peter Fichtner
+			 */
 			private static class RemoveLeadingZerosStrategy extends
 					RemoveZerosStrategy {
 
@@ -191,6 +207,11 @@ public interface DurationFormatter {
 
 			}
 
+			/**
+			 * Strategy that marks trailing zeros as invisible.
+			 * 
+			 * @author Peter Fichtner
+			 */
 			private static class RemoveTrailingZerosStrategy extends
 					RemoveZerosStrategy {
 
@@ -206,6 +227,12 @@ public interface DurationFormatter {
 
 			}
 
+			/**
+			 * Strategy that marks zeros that are <b>not</b> leading and
+			 * <b>not</b> trailing as invisible.
+			 * 
+			 * @author Peter Fichtner
+			 */
 			private static class RemoveMiddleZerosStrategy extends
 					RemoveZerosStrategy {
 
@@ -243,6 +270,12 @@ public interface DurationFormatter {
 
 			}
 
+			/**
+			 * Strategy that marks only the first n elements as visible all
+			 * others as invisible.
+			 * 
+			 * @author Peter Fichtner
+			 */
 			private static class LimitStrategy implements Strategy {
 
 				private final int limit;
@@ -266,6 +299,11 @@ public interface DurationFormatter {
 
 			}
 
+			/**
+			 * Strategy that rounds the last visible bucket.
+			 * 
+			 * @author Peter Fichtner
+			 */
 			private static class RoundingStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
@@ -284,6 +322,12 @@ public interface DurationFormatter {
 
 			}
 
+			/**
+			 * Strategy that searches first visible bucket and pulls all buckets
+			 * (higher values) to the bucket found.
+			 * 
+			 * @author Peter Fichtner
+			 */
 			private static class PullFromLeftStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
