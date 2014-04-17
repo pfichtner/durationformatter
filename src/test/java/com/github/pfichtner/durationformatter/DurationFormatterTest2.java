@@ -45,7 +45,7 @@ public class DurationFormatterTest2 {
 	public void testLimit_30secondsRoundUp2() {
 		// hh:mm:ss
 		assertEquals("01:00",
-				limitAndRound().format(30 + 59 * 60, TimeUnit.SECONDS));
+				limitAndRound().format(30 + (59 * 60), TimeUnit.SECONDS));
 	}
 
 	private DurationFormatter limitAndRound() {
