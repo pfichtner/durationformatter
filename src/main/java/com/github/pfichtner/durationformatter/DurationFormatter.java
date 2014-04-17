@@ -165,12 +165,20 @@ public interface DurationFormatter {
 			private static abstract class RemoveZerosStrategy implements
 					Strategy {
 
-				protected final TimeUnit minimum;
-				protected final TimeUnit maximum;
+				private final TimeUnit minimum;
+				private final TimeUnit maximum;
 
 				public RemoveZerosStrategy(TimeUnit minimum, TimeUnit maximum) {
 					this.minimum = minimum;
 					this.maximum = maximum;
+				}
+
+				protected TimeUnit getMinimum() {
+					return this.minimum;
+				}
+
+				protected TimeUnit getMaximum() {
+					return this.maximum;
 				}
 
 				protected TimeValues removeZeros(TimeValues values,
@@ -202,7 +210,7 @@ public interface DurationFormatter {
 
 				public TimeValues apply(TimeValues values) {
 					return removeZeros(values,
-							values.sequence(maximum, minimum));
+							values.sequence(getMaximum(), getMinimum()));
 				}
 
 			}
@@ -222,7 +230,7 @@ public interface DurationFormatter {
 
 				public TimeValues apply(TimeValues values) {
 					return removeZeros(values,
-							values.sequence(minimum, maximum));
+							values.sequence(getMinimum(), getMaximum()));
 				}
 
 			}
@@ -242,11 +250,11 @@ public interface DurationFormatter {
 				}
 
 				public TimeValues apply(TimeValues values) {
-					Iterable<Bucket> sequence = values.sequence(maximum,
-							minimum);
+					Iterable<Bucket> sequence = values.sequence(getMaximum(),
+							getMinimum());
 					TimeUnit firstNonZero = findFirstVisibleNonZero(sequence);
 					TimeUnit lastNonZero = findFirstVisibleNonZero(values
-							.sequence(minimum, maximum));
+							.sequence(getMinimum(), getMaximum()));
 					if (firstNonZero != null && lastNonZero != null) {
 						for (Bucket bucket : values.sequenceInclude(
 								firstNonZero, lastNonZero)) {
