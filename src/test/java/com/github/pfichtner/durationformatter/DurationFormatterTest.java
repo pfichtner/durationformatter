@@ -75,45 +75,45 @@ public class DurationFormatterTest {
 		DurationFormatter stripMiddle = builder.suppressZeros(
 				SuppressZeros.MIDDLE).build();
 
-		assertEquals("00:000:000", roundOn.format(0, NANOSECONDS));
+		assertEquals("000:000:000", roundOn.format(0, NANOSECONDS));
 		assertEquals("000", stripLeft.format(0, NANOSECONDS));
-		assertEquals("00", stripRight.format(0, NANOSECONDS));
-		assertEquals("00:000:000", stripMiddle.format(0, NANOSECONDS));
+		assertEquals("000", stripRight.format(0, NANOSECONDS));
+		assertEquals("000:000:000", stripMiddle.format(0, NANOSECONDS));
 
-		assertEquals("00:000:499", roundOn.format(499, NANOSECONDS));
+		assertEquals("000:000:499", roundOn.format(499, NANOSECONDS));
 		assertEquals("499", stripLeft.format(499, NANOSECONDS));
-		assertEquals("00:000:499", stripRight.format(499, NANOSECONDS));
-		assertEquals("00:000:499", stripMiddle.format(499, NANOSECONDS));
+		assertEquals("000:000:499", stripRight.format(499, NANOSECONDS));
+		assertEquals("000:000:499", stripMiddle.format(499, NANOSECONDS));
 
-		assertEquals("00:000:500", roundOn.format(500, NANOSECONDS));
+		assertEquals("000:000:500", roundOn.format(500, NANOSECONDS));
 		assertEquals("500", stripLeft.format(500, NANOSECONDS));
-		assertEquals("00:000:500", stripRight.format(500, NANOSECONDS));
-		assertEquals("00:000:500", stripMiddle.format(500, NANOSECONDS));
+		assertEquals("000:000:500", stripRight.format(500, NANOSECONDS));
+		assertEquals("000:000:500", stripMiddle.format(500, NANOSECONDS));
 
-		assertEquals("00:000:999", roundOn.format(999, NANOSECONDS));
+		assertEquals("000:000:999", roundOn.format(999, NANOSECONDS));
 		assertEquals("999", stripLeft.format(999, NANOSECONDS));
-		assertEquals("00:000:999", stripRight.format(999, NANOSECONDS));
-		assertEquals("00:000:999", stripMiddle.format(999, NANOSECONDS));
+		assertEquals("000:000:999", stripRight.format(999, NANOSECONDS));
+		assertEquals("000:000:999", stripMiddle.format(999, NANOSECONDS));
 
-		assertEquals("00:001:499", roundOn.format(1499, NANOSECONDS));
+		assertEquals("000:001:499", roundOn.format(1499, NANOSECONDS));
 		assertEquals("001:499", stripLeft.format(1499, NANOSECONDS));
-		assertEquals("00:001:499", stripRight.format(1499, NANOSECONDS));
-		assertEquals("00:001:499", stripMiddle.format(1499, NANOSECONDS));
+		assertEquals("000:001:499", stripRight.format(1499, NANOSECONDS));
+		assertEquals("000:001:499", stripMiddle.format(1499, NANOSECONDS));
 
-		assertEquals("00:000:001", roundOn.format(1, NANOSECONDS));
+		assertEquals("000:000:001", roundOn.format(1, NANOSECONDS));
 		assertEquals("001", stripLeft.format(1, NANOSECONDS));
-		assertEquals("00:000:001", stripRight.format(1, NANOSECONDS));
-		assertEquals("00:000:001", stripMiddle.format(1, NANOSECONDS));
+		assertEquals("000:000:001", stripRight.format(1, NANOSECONDS));
+		assertEquals("000:000:001", stripMiddle.format(1, NANOSECONDS));
 
-		assertEquals("00:001:000", roundOn.format(1, MICROSECONDS));
+		assertEquals("000:001:000", roundOn.format(1, MICROSECONDS));
 		assertEquals("001:000", stripLeft.format(1, MICROSECONDS));
-		assertEquals("00:001", stripRight.format(1, MICROSECONDS));
-		assertEquals("00:001:000", stripMiddle.format(1, MICROSECONDS));
+		assertEquals("000:001", stripRight.format(1, MICROSECONDS));
+		assertEquals("000:001:000", stripMiddle.format(1, MICROSECONDS));
 
-		assertEquals("01:000:000", roundOn.format(1, MILLISECONDS));
-		assertEquals("01:000:000", stripLeft.format(1, MILLISECONDS));
-		assertEquals("01", stripRight.format(1, MILLISECONDS));
-		assertEquals("01:000:000", stripMiddle.format(1, MILLISECONDS));
+		assertEquals("001:000:000", roundOn.format(1, MILLISECONDS));
+		assertEquals("001:000:000", stripLeft.format(1, MILLISECONDS));
+		assertEquals("001", stripRight.format(1, MILLISECONDS));
+		assertEquals("001:000:000", stripMiddle.format(1, MILLISECONDS));
 	}
 
 	@Test
@@ -332,7 +332,7 @@ public class DurationFormatterTest {
 				.separator("|||||").valueSymbolSeparator("xXx")
 				.symbol(HOURS, "<<H>>").symbol(SECONDS, "<<S>>").build();
 		assertEquals(
-				"00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||00|||||00|||||00",
+				"00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||000|||||000|||||000",
 				df.formatMillis(calc(1, HOURS).add(2, MINUTES).add(3, SECONDS)
 						.result()));
 	}
