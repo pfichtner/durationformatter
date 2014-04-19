@@ -1,7 +1,6 @@
 package com.github.pfichtner.durationformatter;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -13,8 +12,9 @@ public class TimeValues implements Iterable<Bucket> {
 
 	private final Bucket[] buckets = initialize();
 
-	private static final List<TimeUnit> timeunits = TimeUnits.timeUnits;
-	private static final Map<TimeUnit, Long> maxValues = maxValuesFor(timeunits);
+	private static final List<TimeUnit> timeUnits = TimeUnits.timeUnits;
+
+	private static final Map<TimeUnit, Long> maxValues = TimeUnits.maxValues;
 
 	public static class Bucket {
 
@@ -92,18 +92,6 @@ public class TimeValues implements Iterable<Bucket> {
 		super();
 	}
 
-	private static Map<TimeUnit, Long> maxValuesFor(List<TimeUnit> list) {
-		Map<TimeUnit, Long> maxValues = new HashMap<TimeUnit, Long>(list.size());
-		TimeUnit previous = null;
-		for (TimeUnit timeUnit : list) {
-			Long maxValue = Long.valueOf((previous == null ? Long.MAX_VALUE
-					: timeUnit.convert(1, previous)));
-			maxValues.put(timeUnit, maxValue);
-			previous = timeUnit;
-		}
-		return maxValues;
-	}
-
 	public TimeValues(long value, TimeUnit timeUnit) {
 		getBucket(timeUnit).addToValue(value);
 	}
@@ -128,14 +116,14 @@ public class TimeValues implements Iterable<Bucket> {
 	}
 
 	private int bucketIdx(TimeUnit timeUnit) {
-		return timeunits.indexOf(timeUnit);
+		return timeUnits.indexOf(timeUnit);
 	}
 
 	private static Bucket[] initialize() {
-		Bucket[] buckets = new Bucket[timeunits.size()];
+		Bucket[] buckets = new Bucket[timeUnits.size()];
 		Bucket previous = null;
-		for (int i = 0; i < timeunits.size(); i++) {
-			TimeUnit timeUnit = timeunits.get(i);
+		for (int i = 0; i < timeUnits.size(); i++) {
+			TimeUnit timeUnit = timeUnits.get(i);
 			buckets[i] = new Bucket(previous, timeUnit, maxValues.get(timeUnit));
 			previous = buckets[i];
 		}

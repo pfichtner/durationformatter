@@ -351,8 +351,6 @@ public interface DurationFormatter {
 
 			}
 
-			private static final String DEFAULT_FORMAT = "%02d";
-
 			private final String separator;
 			private final String valueSymbolSeparator;
 			private final Map<TimeUnit, String> formats;
@@ -371,6 +369,8 @@ public interface DurationFormatter {
 
 				this.strategy = createStrategy(builder);
 
+				// TODO Create missing formats using #formatFor and remove the
+				// fallback (null check)
 				this.formats = Collections
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.formats));
@@ -442,7 +442,7 @@ public interface DurationFormatter {
 				String format = this.formats.get(timeUnit);
 				String symbol = this.symbols.get(timeUnit);
 				String stringVal = String.format(
-						format == null ? DEFAULT_FORMAT : format, value);
+						format == null ? formatFor(timeUnit) : format, value);
 				return symbol == null ? stringVal : stringVal
 						+ this.valueSymbolSeparator + symbol;
 			}
@@ -450,9 +450,13 @@ public interface DurationFormatter {
 		}
 
 		private static final Builder BASE = new Builder().minimum(SECONDS)
-				.maximum(HOURS).format(TimeUnit.MICROSECONDS, "%03d")
-				.format(TimeUnit.MICROSECONDS, "%03d")
-				.format(TimeUnit.NANOSECONDS, "%03d");
+				.maximum(HOURS);
+
+		public static String formatFor(TimeUnit timeUnit) {
+			int i = timeUnit == DAYS ? 2 : String.valueOf(
+					TimeUnits.maxValues.get(timeUnit) - 1).length();
+			return "%0" + i + "d";
+		}
 
 		/**
 		 * Default instance that formats seconds to hours using digits (e.g.
