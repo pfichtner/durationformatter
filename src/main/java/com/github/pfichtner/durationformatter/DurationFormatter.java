@@ -368,15 +368,24 @@ public interface DurationFormatter {
 				this.valueSymbolSeparator = builder.valueSymbolSeparator;
 
 				this.strategy = createStrategy(builder);
-
-				// TODO Create missing formats using #formatFor and remove the
-				// fallback (null check)
-				this.formats = Collections
-						.unmodifiableMap(new HashMap<TimeUnit, String>(
-								builder.formats));
+				this.formats = Collections.unmodifiableMap(createFormats(
+						builder, idxMin, idxMax));
 				this.symbols = Collections
 						.unmodifiableMap(new HashMap<TimeUnit, String>(
 								builder.symbols));
+			}
+
+			private Map<TimeUnit, String> createFormats(Builder builder,
+					int idxMin, int idxMax) {
+				Map<TimeUnit, String> formats = new HashMap<TimeUnit, String>(
+						builder.formats);
+				for (TimeUnit timeUnit : TimeUnits.timeUnits.subList(idxMax,
+						idxMin + 1)) {
+					String format = builder.formats.get(timeUnit);
+					formats.put(timeUnit, format == null ? formatFor(timeUnit)
+							: format);
+				}
+				return formats;
 			}
 
 			public Strategy createStrategy(Builder builder) {
@@ -441,8 +450,7 @@ public interface DurationFormatter {
 			private String getValueString(long value, TimeUnit timeUnit) {
 				String format = this.formats.get(timeUnit);
 				String symbol = this.symbols.get(timeUnit);
-				String stringVal = String.format(
-						format == null ? formatFor(timeUnit) : format, value);
+				String stringVal = String.format(format, value);
 				return symbol == null ? stringVal : stringVal
 						+ this.valueSymbolSeparator + symbol;
 			}
