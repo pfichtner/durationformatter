@@ -351,6 +351,33 @@ public interface DurationFormatter {
 
 			}
 
+			/**
+			 * Strategy that sets smallest unit visible if no bucket it visble.
+			 * 
+			 * @author Peter Fichtner
+			 */
+			private static class SetAtLeastOneBucketVisibleStrategy implements
+					Strategy {
+				
+				private final TimeUnit minimum;
+
+				public SetAtLeastOneBucketVisibleStrategy(TimeUnit minimum) {
+					this.minimum = minimum;
+				}
+
+
+				public TimeValues apply(TimeValues values) {
+					for (Bucket bucket : values) {
+						if (bucket.isVisible()) {
+							return values;
+						}
+					}
+					values.getBucket(minimum).setVisible(true);
+					return values;
+				}
+
+			}
+
 			private final String separator;
 			private final String valueSymbolSeparator;
 			private final Map<TimeUnit, String> formats;
@@ -405,8 +432,8 @@ public interface DurationFormatter {
 						.add(new LimitStrategy(
 								builder.maximumAmountOfUnitsToShow)) : sb;
 				sb = builder.round ? sb.add(new RoundingStrategy()) : sb;
-				sb.add(new PullFromLeftStrategy());
-				return sb.build();
+				return sb.add(new PullFromLeftStrategy())
+						.add(new SetAtLeastOneBucketVisibleStrategy(builder.minimum)).build();
 			}
 
 			/**

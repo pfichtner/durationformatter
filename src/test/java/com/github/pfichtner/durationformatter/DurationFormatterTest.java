@@ -1,5 +1,8 @@
 package com.github.pfichtner.durationformatter;
 
+import static com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros.LEADING;
+import static com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros.MIDDLE;
+import static com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros.TRAILING;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -7,7 +10,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
@@ -335,6 +338,27 @@ public class DurationFormatterTest {
 				"00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||000|||||000|||||000",
 				df.formatMillis(calc(1, HOURS).add(2, MINUTES).add(3, SECONDS)
 						.result()));
+	}
+
+	@Test
+	public void testAtLeastOneBucketVisible() {
+		Builder baseBuilder = DurationFormatter.Builder.SYMBOLS
+				.minimum(TimeUnit.SECONDS).maximum(TimeUnit.DAYS)
+				.maximumAmountOfUnitsToShow(2);
+
+		DurationFormatter withZeros = baseBuilder.build();
+		DurationFormatter withoutZeros = baseBuilder.suppressZeros(
+				EnumSet.of(LEADING, MIDDLE, TRAILING)).build();
+
+		assertEquals("0d 0h", withZeros.format(1, SECONDS));
+		assertEquals("0d 0h", withZeros.format(1, MINUTES));
+		assertEquals("0d 0h", withZeros.format(0, SECONDS));
+		assertEquals("0d 0h", withZeros.format(0, MINUTES));
+
+		assertEquals("1s", withoutZeros.format(1, SECONDS));
+		assertEquals("1min", withoutZeros.format(1, MINUTES));
+		assertEquals("0s", withoutZeros.format(0, SECONDS));
+		assertEquals("0s", withoutZeros.format(0, MINUTES));
 	}
 
 }
