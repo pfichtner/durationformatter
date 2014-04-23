@@ -24,12 +24,12 @@ public class DurationFormatterTest {
 
 		private long millis;
 
-		public Calc add(int i, TimeUnit timeUnit) {
+		public Calc and(int i, TimeUnit timeUnit) {
 			this.millis += timeUnit.toMillis(i);
 			return this;
 		}
 
-		public long result() {
+		public long asMillis() {
 			return this.millis;
 		}
 
@@ -40,8 +40,8 @@ public class DurationFormatterTest {
 		DurationFormatter df = DurationFormatter.DIGITS;
 		assertEquals(
 				"01:02:03",
-				df.formatMillis(calc(1, HOURS).add(2, MINUTES).add(3, SECONDS)
-						.result()));
+				df.formatMillis(get(1, HOURS).and(2, MINUTES).and(3, SECONDS)
+						.asMillis()));
 		assertEquals("8760:00:00", df.formatMillis(DAYS.toMillis(365)));
 		assertEquals("24000:00:00", df.formatMillis(DAYS.toMillis(1000)));
 	}
@@ -129,7 +129,7 @@ public class DurationFormatterTest {
 				.maximumAmountOfUnitsToShow(1).build();
 
 		{
-			long value = calc(3, DAYS).result();
+			long value = get(3, DAYS).asMillis();
 
 			assertEquals("03:00:00:00", fa1.formatMillis(value));
 			assertEquals("03:00", fa2.formatMillis(value));
@@ -141,7 +141,7 @@ public class DurationFormatterTest {
 		}
 
 		{
-			long value = calc(3, DAYS).add(1, SECONDS).result();
+			long value = get(3, DAYS).and(1, SECONDS).asMillis();
 
 			assertEquals("03:00:00:01", fa1.formatMillis(value));
 			assertEquals("03:00", fa2.formatMillis(value));
@@ -153,7 +153,7 @@ public class DurationFormatterTest {
 		}
 
 		{
-			long value = calc(3, DAYS).add(2, HOURS).add(1, SECONDS).result();
+			long value = get(3, DAYS).and(2, HOURS).and(1, SECONDS).asMillis();
 
 			assertEquals("03:02:00:01", fa1.formatMillis(value));
 			assertEquals("03:02", fa2.formatMillis(value));
@@ -165,8 +165,8 @@ public class DurationFormatterTest {
 		}
 
 		{
-			long value = calc(3, DAYS).add(12, HOURS).add(31, MINUTES)
-					.add(1, SECONDS).result();
+			long value = get(3, DAYS).and(12, HOURS).and(31, MINUTES)
+					.and(1, SECONDS).asMillis();
 
 			assertEquals("03:12:31:01", fa1.formatMillis(value));
 			assertEquals("03:13", fa2.formatMillis(value));
@@ -179,8 +179,8 @@ public class DurationFormatterTest {
 
 	}
 
-	private static Calc calc(int i, TimeUnit timeUnit) {
-		return new Calc().add(i, timeUnit);
+	private static Calc get(int i, TimeUnit timeUnit) {
+		return new Calc().and(i, timeUnit);
 	}
 
 	@Test
@@ -191,7 +191,7 @@ public class DurationFormatterTest {
 		assertEquals("33h 0min 0s", df.formatMillis(HOURS.toMillis(33)));
 		assertEquals("792h 0min 0s", df.formatMillis(DAYS.toMillis(33)));
 		assertEquals("792h 0min 33s",
-				df.formatMillis(calc(33, DAYS).add(33, SECONDS).result()));
+				df.formatMillis(get(33, DAYS).and(33, SECONDS).asMillis()));
 	}
 
 	@Test
@@ -204,8 +204,8 @@ public class DurationFormatterTest {
 
 		df = base.valueSymbolSeparator(" ").build();
 		assertEquals("0 h, 0 m, 33 s", df.formatMillis(SECONDS.toMillis(33)));
-		assertEquals("0 h, 0 m, 34 s", df.formatMillis(calc(33, SECONDS).add(
-				777, MILLISECONDS).result()));
+		assertEquals("0 h, 0 m, 34 s", df.formatMillis(get(33, SECONDS).and(
+				777, MILLISECONDS).asMillis()));
 
 		df = base.minimum(MILLISECONDS).valueSymbolSeparator(" ").build();
 		assertEquals("0 h, 0 m, 33 s, 0 ms",
@@ -213,8 +213,8 @@ public class DurationFormatterTest {
 
 		df = base.valueSymbolSeparator(" ").build();
 		assertEquals("0 h, 0 m, 33 s", df.formatMillis(SECONDS.toMillis(33)));
-		assertEquals("0 h, 0 m, 34 s", df.formatMillis(calc(33, SECONDS).add(
-				777, MILLISECONDS).result()));
+		assertEquals("0 h, 0 m, 34 s", df.formatMillis(get(33, SECONDS).and(
+				777, MILLISECONDS).asMillis()));
 
 		df = Builder.SYMBOLS.minimum(MILLISECONDS).symbol(MINUTES, "m")
 				.maximum(DAYS).valueSymbolSeparator(" ").build();
@@ -322,8 +322,8 @@ public class DurationFormatterTest {
 				.symbol(HOURS, "<<H>>").symbol(SECONDS, "<<S>>").build();
 		assertEquals(
 				"00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||000|||||000|||||000",
-				df.formatMillis(calc(1, HOURS).add(2, MINUTES).add(3, SECONDS)
-						.result()));
+				df.formatMillis(get(1, HOURS).and(2, MINUTES).and(3, SECONDS)
+						.asMillis()));
 	}
 
 	@Test
