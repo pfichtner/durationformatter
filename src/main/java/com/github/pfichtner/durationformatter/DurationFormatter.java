@@ -354,7 +354,7 @@ public interface DurationFormatter {
 			}
 
 			/**
-			 * Strategy that sets smallest unit visible if no bucket it visble.
+			 * Strategy that sets smallest unit visible if no bucket it visible.
 			 * 
 			 * @author Peter Fichtner
 			 */
@@ -490,7 +490,7 @@ public interface DurationFormatter {
 		private static final Builder BASE = new Builder().minimum(SECONDS)
 				.maximum(HOURS);
 
-		public static String formatFor(TimeUnit timeUnit) {
+		private static String formatFor(TimeUnit timeUnit) {
 			int i = timeUnit == DAYS ? 2 : String.valueOf(
 					TimeUnits.maxValues.get(timeUnit) - 1).length();
 			return "%0" + i + "d";
