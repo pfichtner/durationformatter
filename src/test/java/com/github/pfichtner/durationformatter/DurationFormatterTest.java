@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import com.github.pfichtner.durationformatter.DurationFormatter.Builder;
-import com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros;
 
 public class DurationFormatterTest {
 
@@ -70,12 +69,9 @@ public class DurationFormatterTest {
 		Builder builder = Builder.DIGITS.minimum(NANOSECONDS).maximum(
 				MILLISECONDS);
 		DurationFormatter roundOn = builder.build();
-		DurationFormatter stripLeft = builder.suppressZeros(
-				SuppressZeros.LEADING).build();
-		DurationFormatter stripRight = builder.suppressZeros(
-				SuppressZeros.TRAILING).build();
-		DurationFormatter stripMiddle = builder.suppressZeros(
-				SuppressZeros.MIDDLE).build();
+		DurationFormatter stripLeft = builder.suppressZeros(LEADING).build();
+		DurationFormatter stripRight = builder.suppressZeros(TRAILING).build();
+		DurationFormatter stripMiddle = builder.suppressZeros(MIDDLE).build();
 
 		assertEquals("000:000:000", roundOn.format(0, NANOSECONDS));
 		assertEquals("000", stripLeft.format(0, NANOSECONDS));
@@ -232,8 +228,7 @@ public class DurationFormatterTest {
 	public void testMoreSymbols() {
 		DurationFormatter df = Builder.SYMBOLS.round(false)
 				.minimum(NANOSECONDS).maximum(MILLISECONDS)
-				.suppressZeros(SuppressZeros.LEADING).valueSymbolSeparator(" ")
-				.build();
+				.suppressZeros(LEADING).valueSymbolSeparator(" ").build();
 		assertEquals("360 ns", df.format(360, NANOSECONDS));
 		assertEquals("1500 ms 0 μs 0 ns", df.format(1500000000, NANOSECONDS));
 		assertEquals("60 ms 1 μs 3 ns", df.format(60001003, NANOSECONDS));
@@ -242,18 +237,13 @@ public class DurationFormatterTest {
 	@Test
 	public void testSuppressZeros() {
 		Builder builder = Builder.SYMBOLS.minimum(NANOSECONDS).maximum(DAYS);
-		DurationFormatter l = builder.suppressZeros(SuppressZeros.LEADING)
-				.build();
-		DurationFormatter r = builder.suppressZeros(SuppressZeros.TRAILING)
-				.build();
-		DurationFormatter m = builder.suppressZeros(SuppressZeros.MIDDLE)
-				.build();
-		DurationFormatter lm = builder.suppressZeros(SuppressZeros.LEADING,
-				SuppressZeros.MIDDLE).build();
-		DurationFormatter rm = builder.suppressZeros(SuppressZeros.TRAILING,
-				SuppressZeros.MIDDLE).build();
-		DurationFormatter lrm = builder.suppressZeros(SuppressZeros.TRAILING,
-				SuppressZeros.MIDDLE, SuppressZeros.LEADING).build();
+		DurationFormatter l = builder.suppressZeros(LEADING).build();
+		DurationFormatter r = builder.suppressZeros(TRAILING).build();
+		DurationFormatter m = builder.suppressZeros(MIDDLE).build();
+		DurationFormatter lm = builder.suppressZeros(LEADING, MIDDLE).build();
+		DurationFormatter rm = builder.suppressZeros(TRAILING, MIDDLE).build();
+		DurationFormatter lrm = builder
+				.suppressZeros(TRAILING, MIDDLE, LEADING).build();
 
 		long n0000001 = 1;
 		long n1000000 = DAYS.toNanos(1);
