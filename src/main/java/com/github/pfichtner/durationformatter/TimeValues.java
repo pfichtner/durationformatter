@@ -33,17 +33,18 @@ public class TimeValues implements Iterable<Bucket> {
 
 		private void addToValue(long toadd) {
 			long newValue = toadd + this.value;
-			setValue(newValue % maxValue);
+			setValue(newValue % this.maxValue);
 			long rest = newValue - this.value;
-			if (rest > 0 && previous != null) {
+			if (rest > 0 && this.previous != null) {
 				// overflow
-				previous.addToValue(previous.timeUnit.convert(rest, timeUnit));
+				this.previous.addToValue(this.previous.timeUnit.convert(rest,
+						this.timeUnit));
 			}
 		}
 
 		void pushLeftRounded() {
 			long half = this.maxValue / 2;
-			if (this.value + half >= maxValue) {
+			if (this.value + half >= this.maxValue) {
 				addToValue(half);
 			} else {
 				setValue(0);
@@ -51,12 +52,12 @@ public class TimeValues implements Iterable<Bucket> {
 		}
 
 		void pollFromLeft() {
-			if (previous != null) {
-				previous.pollFromLeft();
+			if (this.previous != null) {
+				this.previous.pollFromLeft();
 				setValue(getValue()
-						+ timeUnit.convert(previous.getValue(),
-								previous.getTimeUnit()));
-				previous.setValue(0);
+						+ this.timeUnit.convert(this.previous.getValue(),
+								this.previous.getTimeUnit()));
+				this.previous.setValue(0);
 			}
 		}
 
@@ -65,15 +66,15 @@ public class TimeValues implements Iterable<Bucket> {
 		}
 
 		public long getValue() {
-			return value;
+			return this.value;
 		}
 
 		public TimeUnit getTimeUnit() {
-			return timeUnit;
+			return this.timeUnit;
 		}
 
 		public boolean isVisible() {
-			return visible;
+			return this.visible;
 		}
 
 		public void setVisible(boolean visible) {
@@ -82,8 +83,8 @@ public class TimeValues implements Iterable<Bucket> {
 
 		@Override
 		public String toString() {
-			return "Bucket [timeUnit=" + timeUnit + ", value=" + value
-					+ ", visible=" + visible + "]";
+			return "Bucket [timeUnit=" + this.timeUnit + ", value="
+					+ this.value + ", visible=" + this.visible + "]";
 		}
 
 	}
@@ -112,7 +113,7 @@ public class TimeValues implements Iterable<Bucket> {
 	}
 
 	public Bucket getBucket(TimeUnit timeUnit) {
-		return buckets[bucketIdx(timeUnit)];
+		return this.buckets[bucketIdx(timeUnit)];
 	}
 
 	private int bucketIdx(TimeUnit timeUnit) {
@@ -165,7 +166,7 @@ public class TimeValues implements Iterable<Bucket> {
 
 	@Override
 	public String toString() {
-		return "Buckets [buckets=" + Arrays.toString(buckets) + "]";
+		return "Buckets [buckets=" + Arrays.toString(this.buckets) + "]";
 	}
 
 }

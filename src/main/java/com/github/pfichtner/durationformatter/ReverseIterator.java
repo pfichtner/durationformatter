@@ -17,15 +17,15 @@ public class ReverseIterator<T> implements Iterator<T> {
 	}
 
 	public boolean hasNext() {
-		return delegate.hasPrevious();
+		return this.delegate.hasPrevious();
 	}
 
 	public T next() {
-		return delegate.previous();
+		return this.delegate.previous();
 	}
 
 	public void remove() {
-		delegate.remove();
+		this.delegate.remove();
 	}
 
 }

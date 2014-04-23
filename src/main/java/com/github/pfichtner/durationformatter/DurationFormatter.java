@@ -66,7 +66,7 @@ public interface DurationFormatter {
 
 		public TimeValues apply(TimeValues values) {
 			TimeValues result = values;
-			for (Strategy strategy : strategies) {
+			for (Strategy strategy : this.strategies) {
 				result = strategy.apply(result);
 			}
 			return result;
@@ -373,7 +373,7 @@ public interface DurationFormatter {
 							return values;
 						}
 					}
-					values.getBucket(minimum).setVisible(true);
+					values.getBucket(this.minimum).setVisible(true);
 					return values;
 				}
 
@@ -459,7 +459,8 @@ public interface DurationFormatter {
 			 * @return String containing the duration
 			 */
 			public String format(long longVal, TimeUnit timeUnit) {
-				return join(strategy.apply(new TimeValues(longVal, timeUnit)));
+				return join(this.strategy.apply(new TimeValues(longVal,
+						timeUnit)));
 			}
 
 			private String join(TimeValues values) {
@@ -473,8 +474,8 @@ public interface DurationFormatter {
 					}
 				}
 				int len = sb.length();
-				return len == 0 ? "" : sb.delete(len - separator.length(), len)
-						.toString();
+				return len == 0 ? "" : sb.delete(len - this.separator.length(),
+						len).toString();
 			}
 
 			private String getValueString(long value, TimeUnit timeUnit) {

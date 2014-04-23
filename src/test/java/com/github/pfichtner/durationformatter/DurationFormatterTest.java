@@ -30,7 +30,7 @@ public class DurationFormatterTest {
 		}
 
 		public long result() {
-			return millis;
+			return this.millis;
 		}
 
 	}
