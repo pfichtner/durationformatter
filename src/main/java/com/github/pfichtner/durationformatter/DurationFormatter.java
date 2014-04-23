@@ -9,6 +9,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -358,13 +360,12 @@ public interface DurationFormatter {
 			 */
 			private static class SetAtLeastOneBucketVisibleStrategy implements
 					Strategy {
-				
+
 				private final TimeUnit minimum;
 
 				public SetAtLeastOneBucketVisibleStrategy(TimeUnit minimum) {
 					this.minimum = minimum;
 				}
-
 
 				public TimeValues apply(TimeValues values) {
 					for (Bucket bucket : values) {
@@ -432,8 +433,10 @@ public interface DurationFormatter {
 						.add(new LimitStrategy(
 								builder.maximumAmountOfUnitsToShow)) : sb;
 				sb = builder.round ? sb.add(new RoundingStrategy()) : sb;
-				return sb.add(new PullFromLeftStrategy())
-						.add(new SetAtLeastOneBucketVisibleStrategy(builder.minimum)).build();
+				return sb
+						.add(new PullFromLeftStrategy())
+						.add(new SetAtLeastOneBucketVisibleStrategy(
+								builder.minimum)).build();
 			}
 
 			/**
@@ -603,10 +606,14 @@ public interface DurationFormatter {
 					: EnumSet.of(suppressZeros));
 		}
 
-		public Builder suppressZeros(Set<SuppressZeros> suppressZeros) {
+		public Builder suppressZeros(SuppressZeros... suppressZeros) {
+			return suppressZeros(Arrays.asList(suppressZeros));
+		}
+
+		public Builder suppressZeros(Collection<SuppressZeros> suppressZeros) {
 			Builder clone = clone();
 			clone.suppressZeros = suppressZeros == null ? DEFAULT_SUPPRESS_MODE
-					: suppressZeros;
+					: EnumSet.copyOf(suppressZeros);
 			return clone;
 		}
 

@@ -249,15 +249,12 @@ public class DurationFormatterTest {
 				.build();
 		DurationFormatter m = builder.suppressZeros(SuppressZeros.MIDDLE)
 				.build();
-		DurationFormatter lm = builder.suppressZeros(
-				EnumSet.of(SuppressZeros.LEADING, SuppressZeros.MIDDLE))
-				.build();
-		DurationFormatter rm = builder.suppressZeros(
-				EnumSet.of(SuppressZeros.TRAILING, SuppressZeros.MIDDLE))
-				.build();
-		DurationFormatter lrm = builder.suppressZeros(
-				EnumSet.of(SuppressZeros.TRAILING, SuppressZeros.MIDDLE,
-						SuppressZeros.LEADING)).build();
+		DurationFormatter lm = builder.suppressZeros(SuppressZeros.LEADING,
+				SuppressZeros.MIDDLE).build();
+		DurationFormatter rm = builder.suppressZeros(SuppressZeros.TRAILING,
+				SuppressZeros.MIDDLE).build();
+		DurationFormatter lrm = builder.suppressZeros(SuppressZeros.TRAILING,
+				SuppressZeros.MIDDLE, SuppressZeros.LEADING).build();
 
 		long n0000001 = 1;
 		long n1000000 = DAYS.toNanos(1);
@@ -347,8 +344,8 @@ public class DurationFormatterTest {
 				.maximumAmountOfUnitsToShow(2);
 
 		DurationFormatter withZeros = baseBuilder.build();
-		DurationFormatter withoutZeros = baseBuilder.suppressZeros(
-				EnumSet.of(LEADING, MIDDLE, TRAILING)).build();
+		DurationFormatter withoutZeros = baseBuilder.suppressZeros(LEADING,
+				MIDDLE, TRAILING).build();
 
 		assertEquals("0d 0h", withZeros.format(1, SECONDS));
 		assertEquals("0d 0h", withZeros.format(1, MINUTES));
