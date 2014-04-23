@@ -584,11 +584,13 @@ public interface DurationFormatter {
 		}
 
 		/**
-		 * If you have lung running jobs (e.g. download, convention, ...) you
-		 * want not to display 03:00:00:00:01 but display 03 or 03:00
+		 * Cut of after n units, e.g. if there is a long running jobs (e.g.
+		 * download, convert-job, ...) you want not to display 03:00:00:00:01
+		 * but display 03:00 (or 03) instead.
 		 * 
 		 * @param maximumAmountOfUnitsToShow
-		 *            how many units (from the left) should be shown
+		 *            how many units (from the left) should be shown, remaining
+		 *            units will be cut of (but rounded if rounding is enabled)
 		 * @return this Builder
 		 */
 		public Builder maximumAmountOfUnitsToShow(int maximumAmountOfUnitsToShow) {
