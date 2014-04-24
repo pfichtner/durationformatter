@@ -6,6 +6,16 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+/**
+ * These are the tests I did use while I did completely rewrite the whole
+ * library test-driven (TDD). Because
+ * {@link DurationFormatter.Builder#maximumAmountOfUnitsToShow(int)} is a
+ * special case I started early to implement this feature since otherwise it
+ * would have been impossible again to include this feature in the existing
+ * library code.
+ * 
+ * @author Peter Fichtner
+ */
 public class DurationFormatterTest2 {
 
 	@Test
