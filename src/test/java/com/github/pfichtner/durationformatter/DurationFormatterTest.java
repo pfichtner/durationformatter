@@ -305,10 +305,11 @@ public class DurationFormatterTest {
 	@Test
 	public void testCrazy() {
 		DurationFormatter df = new Builder().maximum(DAYS).minimum(NANOSECONDS)
-				.separator("|||||").valueSymbolSeparator("xXx")
-				.symbol(HOURS, "<<H>>").symbol(SECONDS, "<<S>>").build();
+				.separator("|").valueSymbolSeparator("_")
+				.symbol(HOURS, "hours").symbol(SECONDS, "seconds")
+				.symbol(TimeUnit.MICROSECONDS, "micros").build();
 		assertEquals(
-				"00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||000|||||000|||||000",
+				"00|01_hours|02|03_seconds|000|000_micros|000",
 				df.formatMillis(get(1, HOURS).and(2, MINUTES).and(3, SECONDS)
 						.as(MILLISECONDS)));
 	}
