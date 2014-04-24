@@ -1,5 +1,6 @@
 package com.github.pfichtner.durationformatter;
 
+import static com.github.pfichtner.durationformatter.TimeValueAdder.get;
 import static com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros.LEADING;
 import static com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros.MIDDLE;
 import static com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros.TRAILING;
@@ -20,28 +21,13 @@ import com.github.pfichtner.durationformatter.DurationFormatter.Builder;
 
 public class DurationFormatterTest {
 
-	private static class Calc {
-
-		private long millis;
-
-		public Calc and(int i, TimeUnit timeUnit) {
-			this.millis += timeUnit.toMillis(i);
-			return this;
-		}
-
-		public long asMillis() {
-			return this.millis;
-		}
-
-	}
-
 	@Test
 	public void testDigits() {
 		DurationFormatter df = DurationFormatter.DIGITS;
 		assertEquals(
 				"01:02:03",
 				df.formatMillis(get(1, HOURS).and(2, MINUTES).and(3, SECONDS)
-						.asMillis()));
+						.as(MILLISECONDS)));
 		assertEquals("8760:00:00", df.formatMillis(DAYS.toMillis(365)));
 		assertEquals("24000:00:00", df.formatMillis(DAYS.toMillis(1000)));
 	}
@@ -129,7 +115,7 @@ public class DurationFormatterTest {
 				.maximumAmountOfUnitsToShow(1).build();
 
 		{
-			long value = get(3, DAYS).asMillis();
+			long value = get(3, DAYS).as(MILLISECONDS);
 
 			assertEquals("03:00:00:00", fa1.formatMillis(value));
 			assertEquals("03:00", fa2.formatMillis(value));
@@ -141,7 +127,7 @@ public class DurationFormatterTest {
 		}
 
 		{
-			long value = get(3, DAYS).and(1, SECONDS).asMillis();
+			long value = get(3, DAYS).and(1, SECONDS).as(MILLISECONDS);
 
 			assertEquals("03:00:00:01", fa1.formatMillis(value));
 			assertEquals("03:00", fa2.formatMillis(value));
@@ -153,7 +139,8 @@ public class DurationFormatterTest {
 		}
 
 		{
-			long value = get(3, DAYS).and(2, HOURS).and(1, SECONDS).asMillis();
+			long value = get(3, DAYS).and(2, HOURS).and(1, SECONDS)
+					.as(MILLISECONDS);
 
 			assertEquals("03:02:00:01", fa1.formatMillis(value));
 			assertEquals("03:02", fa2.formatMillis(value));
@@ -166,7 +153,7 @@ public class DurationFormatterTest {
 
 		{
 			long value = get(3, DAYS).and(12, HOURS).and(31, MINUTES)
-					.and(1, SECONDS).asMillis();
+					.and(1, SECONDS).as(MILLISECONDS);
 
 			assertEquals("03:12:31:01", fa1.formatMillis(value));
 			assertEquals("03:13", fa2.formatMillis(value));
@@ -179,10 +166,6 @@ public class DurationFormatterTest {
 
 	}
 
-	private static Calc get(int i, TimeUnit timeUnit) {
-		return new Calc().and(i, timeUnit);
-	}
-
 	@Test
 	public void testDefaultSymbols() {
 		DurationFormatter df = DurationFormatter.SYMBOLS;
@@ -190,8 +173,8 @@ public class DurationFormatterTest {
 		assertEquals("0h 33min 0s", df.formatMillis(MINUTES.toMillis(33)));
 		assertEquals("33h 0min 0s", df.formatMillis(HOURS.toMillis(33)));
 		assertEquals("792h 0min 0s", df.formatMillis(DAYS.toMillis(33)));
-		assertEquals("792h 0min 33s",
-				df.formatMillis(get(33, DAYS).and(33, SECONDS).asMillis()));
+		assertEquals("792h 0min 33s", df.formatMillis(get(33, DAYS).and(33,
+				SECONDS).as(MILLISECONDS)));
 	}
 
 	@Test
@@ -204,8 +187,10 @@ public class DurationFormatterTest {
 
 		df = base.valueSymbolSeparator(" ").build();
 		assertEquals("0 h, 0 m, 33 s", df.formatMillis(SECONDS.toMillis(33)));
-		assertEquals("0 h, 0 m, 34 s", df.formatMillis(get(33, SECONDS).and(
-				777, MILLISECONDS).asMillis()));
+		assertEquals(
+				"0 h, 0 m, 34 s",
+				df.formatMillis(get(33, SECONDS).and(777, MILLISECONDS).as(
+						MILLISECONDS)));
 
 		df = base.minimum(MILLISECONDS).valueSymbolSeparator(" ").build();
 		assertEquals("0 h, 0 m, 33 s, 0 ms",
@@ -213,8 +198,10 @@ public class DurationFormatterTest {
 
 		df = base.valueSymbolSeparator(" ").build();
 		assertEquals("0 h, 0 m, 33 s", df.formatMillis(SECONDS.toMillis(33)));
-		assertEquals("0 h, 0 m, 34 s", df.formatMillis(get(33, SECONDS).and(
-				777, MILLISECONDS).asMillis()));
+		assertEquals(
+				"0 h, 0 m, 34 s",
+				df.formatMillis(get(33, SECONDS).and(777, MILLISECONDS).as(
+						MILLISECONDS)));
 
 		df = Builder.SYMBOLS.minimum(MILLISECONDS).symbol(MINUTES, "m")
 				.maximum(DAYS).valueSymbolSeparator(" ").build();
@@ -323,7 +310,7 @@ public class DurationFormatterTest {
 		assertEquals(
 				"00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||000|||||000|||||000",
 				df.formatMillis(get(1, HOURS).and(2, MINUTES).and(3, SECONDS)
-						.asMillis()));
+						.as(MILLISECONDS)));
 	}
 
 	@Test
