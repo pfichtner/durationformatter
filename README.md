@@ -50,9 +50,9 @@ assertEquals("0 h, 0 m, 34 s", df.formatMillis(SECONDS.toMillis(33) + MILLISECON
 Of course you can create your own DurationFormatter without defaults by instantiating your own Builder
 
 ```java
-DurationFormatter df = new Builder().maximum(TimeUnit.DAYS).minimum(TimeUnit.NANOSECONDS).separator("|||||")
-	.valueSymbolSeparator("xXx").symbol(HOURS, "<<H>>").symbol(SECONDS, "<<S>>").build();
-assertEquals("00|||||01xXx<<H>>|||||02|||||03xXx<<S>>|||||00|||||00|||||00", df.formatMillis(HOURS.toMillis(1) 
+DurationFormatter df = new Builder().maximum(DAYS).minimum(NANOSECONDS).separator("|").valueSymbolSeparator("_")
+	.symbol(HOURS, "hours").symbol(SECONDS, "seconds").symbol(TimeUnit.MICROSECONDS, "micros").build();
+assertEquals("00|01_hours|02|03_seconds|000|000_micros|000", df.formatMillis(HOURS.toMillis(1) 
 	+ MINUTES.toMillis(2) + SECONDS.toMillis(3)));
 ```
  
