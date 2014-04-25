@@ -139,9 +139,8 @@ public interface DurationFormatter {
 			}
 
 			public Format generate(FormatGenerators formatGenerators) {
-				Format format = new DecimalFormat("0"
+				return new DecimalFormat("0"
 						+ formatGenerators.valueSymbolSeparator + this.symbol);
-				return format;
 			}
 
 		}
