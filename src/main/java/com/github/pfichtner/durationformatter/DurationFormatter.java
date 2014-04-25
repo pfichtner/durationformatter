@@ -9,6 +9,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.text.DecimalFormat;
+import java.text.Format;
+import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,7 +85,7 @@ public interface DurationFormatter {
 	/**
 	 * Default instance, for format-string see {@link Builder#DIGITS}.
 	 */
-	DurationFormatter DIGITS = Builder.DIGITS.build();;
+	DurationFormatter DIGITS = Builder.DIGITS.build();
 
 	/**
 	 * Default instance, for format-string see {@link Builder#SYMBOLS}.
@@ -119,8 +121,110 @@ public interface DurationFormatter {
 	 */
 	public static class Builder implements Cloneable {
 
+		private static interface FormatGenerator {
+			Format generate(FormatGenerators formatGenerators);
+		}
+
+		private static abstract class AbstractFormatGenerator implements
+				FormatGenerator {
+		}
+
+		private static class AppendSymbolFormatGenerator extends
+				AbstractFormatGenerator {
+
+			private final String symbol;
+
+			public AppendSymbolFormatGenerator(String symbol) {
+				this.symbol = symbol;
+			}
+
+			public Format generate(FormatGenerators formatGenerators) {
+				Format format = new DecimalFormat("0"
+						+ formatGenerators.valueSymbolSeparator + this.symbol);
+				return format;
+			}
+
+		}
+
+		private static class ChoiceSymbolFormatGenerator extends
+				AbstractFormatGenerator {
+
+			private final String singular;
+			private final String plural;
+
+			public ChoiceSymbolFormatGenerator(String singular, String plural) {
+				this.singular = singular;
+				this.plural = plural;
+			}
+
+			public Format generate(FormatGenerators formatGenerators) {
+				return new MessageFormat("{0}"
+						+ formatGenerators.valueSymbolSeparator
+						+ "{0,choice,0#" + this.plural + "|1#" + this.singular
+						+ "|1<" + this.plural + "}");
+			}
+		}
+
+		private static class FormatGenerators implements Cloneable {
+
+			private Map<TimeUnit, FormatGenerator> generators = new HashMap<TimeUnit, FormatGenerator>();
+			private String valueSymbolSeparator = "";
+			public boolean leadingZeros = true;
+
+			public void valueSymbolSeparator(String valueSymbolSeparator) {
+				this.valueSymbolSeparator = valueSymbolSeparator;
+			}
+
+			public void useFormatGenerator(TimeUnit timeUnit,
+					FormatGenerator value) {
+				this.generators.put(timeUnit, value);
+			}
+
+			@Override
+			protected FormatGenerators clone()
+					throws CloneNotSupportedException {
+				FormatGenerators clone = (FormatGenerators) super.clone();
+				clone.generators = new HashMap<TimeUnit, FormatGenerator>(
+						this.generators);
+				return clone;
+			}
+
+			private Map<TimeUnit, Format> createFormats(Builder builder,
+					int idxMin, int idxMax) {
+				Map<TimeUnit, Format> result = new HashMap<TimeUnit, Format>(
+						this.generators.size());
+				// TODO Reuse formatters: Since they are created per instance
+				// they can be used unsynchronized
+				for (TimeUnit timeUnit : TimeUnits.timeUnits.subList(idxMax,
+						idxMin + 1)) {
+					FormatGenerator generator = this.generators.get(timeUnit);
+					result.put(
+							timeUnit,
+							generator == null ? formatFor(timeUnit) : generator
+									.generate(this));
+				}
+				return result;
+			}
+
+			private NumberFormat formatFor(TimeUnit timeUnit) {
+				return formatFor(timeUnit == DAYS ? 2 : String.valueOf(
+						TimeUnits.maxValues.get(timeUnit) - 1).length());
+			}
+
+			private DecimalFormat formatFor(int len) {
+				DecimalFormat format = new DecimalFormat();
+				format.setMaximumFractionDigits(0);
+				format.setGroupingUsed(false);
+				format.setMinimumIntegerDigits(this.leadingZeros ? len : 1);
+				return format;
+			}
+
+		}
+
 		private static final EnumSet<SuppressZeros> DEFAULT_SUPPRESS_MODE = EnumSet
 				.noneOf(SuppressZeros.class);
+
+		private FormatGenerators formatGenerators = new FormatGenerators();
 
 		/**
 		 * A Formatter for durations. This class is threadsafe. Instances can be
@@ -382,11 +486,10 @@ public interface DurationFormatter {
 			}
 
 			private final String separator;
-			private final String valueSymbolSeparator;
-			private final Map<TimeUnit, NumberFormat> formats;
-			private final Map<TimeUnit, String> symbols;
 
 			private final Strategy strategy;
+
+			private Map<TimeUnit, Format> formats;
 
 			public DefaultDurationFormatter(Builder builder) {
 				checkState(builder.minimum.compareTo(builder.maximum) <= 0,
@@ -395,29 +498,11 @@ public interface DurationFormatter {
 				int idxMax = indexOf(TimeUnits.timeUnits, builder.maximum);
 				checkState(idxMin > idxMax, "min must not be greater than max");
 				this.separator = builder.separator;
-				this.valueSymbolSeparator = builder.valueSymbolSeparator;
 
 				this.strategy = createStrategy(builder);
-				this.formats = Collections.unmodifiableMap(createFormats(
-						builder, idxMin, idxMax));
-				this.symbols = Collections
-						.unmodifiableMap(new HashMap<TimeUnit, String>(
-								builder.symbols));
-			}
-
-			private Map<TimeUnit, NumberFormat> createFormats(Builder builder,
-					int idxMin, int idxMax) {
-				Map<TimeUnit, NumberFormat> formats = new HashMap<TimeUnit, NumberFormat>(
-						builder.formats);
-				// TODO Reuse formatters: Since they are created per instance
-				// they can be used unsynchronized
-				for (TimeUnit timeUnit : TimeUnits.timeUnits.subList(idxMax,
-						idxMin + 1)) {
-					NumberFormat format = builder.formats.get(timeUnit);
-					formats.put(timeUnit, format == null ? formatFor(timeUnit)
-							: format);
-				}
-				return formats;
+				this.formats = Collections
+						.unmodifiableMap(builder.formatGenerators
+								.createFormats(builder, idxMin, idxMax));
 			}
 
 			public Strategy createStrategy(Builder builder) {
@@ -483,30 +568,15 @@ public interface DurationFormatter {
 			}
 
 			private String getValueString(long value, TimeUnit timeUnit) {
-				NumberFormat format = this.formats.get(timeUnit);
-				String symbol = this.symbols.get(timeUnit);
-				String stringVal = format.format(value);
-				return symbol == null ? stringVal : stringVal
-						+ this.valueSymbolSeparator + symbol;
+				Format format = this.formats.get(timeUnit);
+				return format instanceof MessageFormat ? ((MessageFormat) format)
+						.format(new Object[] { value }) : format.format(value);
 			}
 
 		}
 
 		private static final Builder BASE = new Builder().minimum(SECONDS)
 				.maximum(HOURS);
-
-		private static NumberFormat formatFor(TimeUnit timeUnit) {
-			return formatFor(timeUnit == DAYS ? 2 : String.valueOf(
-					TimeUnits.maxValues.get(timeUnit) - 1).length());
-		}
-
-		private static DecimalFormat formatFor(int len) {
-			DecimalFormat format = new DecimalFormat();
-			format.setMaximumFractionDigits(0);
-			format.setGroupingUsed(false);
-			format.setMinimumIntegerDigits(len);
-			return format;
-		}
 
 		/**
 		 * Default instance that formats seconds to hours using digits (e.g.
@@ -518,23 +588,26 @@ public interface DurationFormatter {
 		 * Default instance that formats seconds to hours using symbols (e.g.
 		 * <code>0h 12m 33s</code>)
 		 */
-		public static final Builder SYMBOLS = BASE.separator(" ").format(-1)
+		public static final Builder SYMBOLS = BASE.separator(" ")
 				.symbol(NANOSECONDS, "ns").symbol(MICROSECONDS, "μs")
 				.symbol(MILLISECONDS, "ms").symbol(SECONDS, "s")
 				.symbol(MINUTES, "min").symbol(HOURS, "h").symbol(DAYS, "d");
 
 		private int maximumAmountOfUnitsToShow = Integer.MAX_VALUE;
 		private String separator = ":";
-		private String valueSymbolSeparator = "";
 		private TimeUnit minimum = MILLISECONDS;
 		private TimeUnit maximum = HOURS;
 		private boolean round = true;
 		private Set<SuppressZeros> suppressZeros = DEFAULT_SUPPRESS_MODE;
-		private Map<TimeUnit, NumberFormat> formats = new HashMap<TimeUnit, NumberFormat>();
-		private Map<TimeUnit, String> symbols = new HashMap<TimeUnit, String>();
 
 		public DurationFormatter build() {
 			return new DefaultDurationFormatter(this);
+		}
+
+		public Builder valueSymbolSeparator(String separator) {
+			Builder clone = clone();
+			clone.formatGenerators.valueSymbolSeparator(separator);
+			return clone;
 		}
 
 		public Builder maximum(TimeUnit maximum) {
@@ -580,44 +653,27 @@ public interface DurationFormatter {
 			return clone;
 		}
 
-		/**
-		 * Sets the separator between the value and timeunit
-		 * 
-		 * @param valueSymbolSeparator
-		 *            symbolSeparator to use
-		 * @return new Builder instance
-		 */
-		public Builder valueSymbolSeparator(String valueSymbolSeparator) {
+		public Builder leadingZeros(boolean leadingZeros) {
 			Builder clone = clone();
-			clone.valueSymbolSeparator = valueSymbolSeparator;
-			return clone;
-		}
-
-		@Deprecated
-		public Builder format(int len) {
-			Builder clone = clone();
-			for (TimeUnit timeUnit : TimeUnits.timeUnits) {
-				clone = clone.format(timeUnit, len);
-			}
-			return clone;
-		}
-
-		@Deprecated
-		public Builder format(TimeUnit timeUnit, int len) {
-			Builder clone = clone();
-			clone.formats.put(timeUnit, formatFor(len));
-			return clone;
-		}
-
-		public Builder format(TimeUnit timeUnit, NumberFormat format) {
-			Builder clone = clone();
-			clone.formats.put(timeUnit, format);
+			clone.formatGenerators.leadingZeros = leadingZeros;
 			return clone;
 		}
 
 		public Builder symbol(TimeUnit timeUnit, String symbol) {
+			return useFormatGenerator(timeUnit,
+					new AppendSymbolFormatGenerator(symbol));
+		}
+
+		public Builder symbolChoice(TimeUnit timeUnit, String singular,
+				String plural) {
+			return useFormatGenerator(timeUnit,
+					new ChoiceSymbolFormatGenerator(singular, plural));
+		}
+
+		public Builder useFormatGenerator(TimeUnit timeUnit,
+				FormatGenerator value) {
 			Builder clone = clone();
-			clone.symbols.put(timeUnit, symbol);
+			clone.formatGenerators.useFormatGenerator(timeUnit, value);
 			return clone;
 		}
 
@@ -657,9 +713,7 @@ public interface DurationFormatter {
 		protected Builder clone() {
 			try {
 				Builder clone = (Builder) super.clone();
-				clone.formats = new HashMap<TimeUnit, NumberFormat>(
-						this.formats);
-				clone.symbols = new HashMap<TimeUnit, String>(this.symbols);
+				clone.formatGenerators = this.formatGenerators.clone();
 				return clone;
 			} catch (CloneNotSupportedException e) {
 				throw new RuntimeException(e);

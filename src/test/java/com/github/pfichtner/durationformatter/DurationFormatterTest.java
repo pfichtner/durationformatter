@@ -1,9 +1,9 @@
 package com.github.pfichtner.durationformatter;
 
-import static com.github.pfichtner.durationformatter.TimeValueAdder.get;
 import static com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros.LEADING;
 import static com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros.MIDDLE;
 import static com.github.pfichtner.durationformatter.DurationFormatter.SuppressZeros.TRAILING;
+import static com.github.pfichtner.durationformatter.TimeValueAdder.get;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -15,6 +15,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.github.pfichtner.durationformatter.DurationFormatter.Builder;
@@ -303,15 +304,26 @@ public class DurationFormatterTest {
 	}
 
 	@Test
+	@Ignore
 	public void testCrazy() {
-		DurationFormatter df = new Builder().maximum(DAYS).minimum(NANOSECONDS)
+		Builder base = new Builder().maximum(DAYS).minimum(NANOSECONDS)
 				.separator("|").valueSymbolSeparator("_")
 				.symbol(HOURS, "hours").symbol(SECONDS, "seconds")
-				.symbol(TimeUnit.MICROSECONDS, "micros").build();
+				.symbol(TimeUnit.MICROSECONDS, "micros");
 		assertEquals(
 				"00|01_hours|02|03_seconds|000|000_micros|000",
-				df.formatMillis(get(1, HOURS).and(2, MINUTES).and(3, SECONDS)
-						.as(MILLISECONDS)));
+				base.leadingZeros(true)
+						.build()
+						.formatMillis(
+								get(1, HOURS).and(2, MINUTES).and(3, SECONDS)
+										.as(MILLISECONDS)));
+		assertEquals(
+				"0|1_hours|2|3_seconds|0|0_micros|0",
+				base.leadingZeros(false)
+						.build()
+						.formatMillis(
+								get(1, HOURS).and(2, MINUTES).and(3, SECONDS)
+										.as(MILLISECONDS)));
 	}
 
 	@Test
@@ -333,6 +345,18 @@ public class DurationFormatterTest {
 		assertEquals("1min", withoutZeros.format(1, MINUTES));
 		assertEquals("0s", withoutZeros.format(0, SECONDS));
 		assertEquals("0s", withoutZeros.format(0, MINUTES));
+	}
+
+	@Test
+	public void testSingularVsPlural() throws Exception {
+		DurationFormatter df = DurationFormatter.Builder.SYMBOLS.maximum(DAYS)
+				.minimum(SECONDS).separator(" and ").valueSymbolSeparator(" ")
+				.symbolChoice(DAYS, "day", "days").symbol(HOURS, "hours")
+				.symbol(MINUTES, "minutes").symbol(SECONDS, "seconds").build();
+		long val = get(1, DAYS).and(2, HOURS).and(0, TimeUnit.MINUTES)
+				.and(3, TimeUnit.SECONDS).as(SECONDS);
+		assertEquals("1 day and 2 hours and 0 minutes and 3 seconds",
+				df.format(val, SECONDS));
 	}
 
 }
