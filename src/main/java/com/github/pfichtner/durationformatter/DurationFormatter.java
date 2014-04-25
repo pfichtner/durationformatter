@@ -554,12 +554,15 @@ public interface DurationFormatter {
 
 			private String join(TimeValues values) {
 				StringBuilder sb = new StringBuilder();
-				for (Bucket bucket : values) {
-					if (bucket.isVisible()) {
-						sb.append(
-								getValueString(bucket.getValue(),
-										bucket.getTimeUnit())).append(
-								this.separator);
+				// since we use non-threadsafe Formaters we have to synchronize
+				synchronized (this.formats) {
+					for (Bucket bucket : values) {
+						if (bucket.isVisible()) {
+							sb.append(
+									getValueString(bucket.getValue(),
+											bucket.getTimeUnit())).append(
+									this.separator);
+						}
 					}
 				}
 				int len = sb.length();
