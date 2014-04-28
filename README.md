@@ -1,18 +1,14 @@
-durationformatter
-=================
+# durationformatter [![Build Status](https://buildhive.cloudbees.com/job/pfichtner/job/durationformatter/badge/icon)](https://buildhive.cloudbees.com/job/pfichtner/job/durationformatter/)
+
 
 Java Library minimal in size and without overhead just for formatting durations
 
-Intention
----------
-
+## Intention
 Because I could not find the 5th time i searched for an artifact just for formatting 
 durations to strings, I started to write my own. This class should be flexible 
 enough to cover all possible needs.
 
-Usage
------
-
+## Usage
 These showcases are copied from the UnitTests:
 
 Default digit format
@@ -57,9 +53,7 @@ assertEquals("00|01_hours|02|03_seconds|000|000_micros|000", df.formatMillis(HOU
 ```
  
 
-Integration
------------
-
+## Integration
 Since durationformatter is hosted on maven central Maven users can easily use the library  by adding the dependency to their pom.xml:
 
 ```xml
@@ -72,5 +66,3 @@ Since durationformatter is hosted on maven central Maven users can easily use th
 
 Non-maven users can copy the artifact(s) directly from maven central into their local workspace<br>
 http://central.maven.org/maven2/com/github/pfichtner/durationformatter/
-
-[![Build Status](https://buildhive.cloudbees.com/job/pfichtner/job/durationformatter/badge/icon)](https://buildhive.cloudbees.com/job/pfichtner/job/durationformatter/)
