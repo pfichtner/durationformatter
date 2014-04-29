@@ -66,3 +66,6 @@ Since durationformatter is hosted on maven central Maven users can easily use th
 
 Non-maven users can copy the artifact(s) directly from maven central into their local workspace<br>
 http://central.maven.org/maven2/com/github/pfichtner/durationformatter/
+
+## License
+Copyright 2012-2014 Peter Fichtner - Released under the [Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0.html)
