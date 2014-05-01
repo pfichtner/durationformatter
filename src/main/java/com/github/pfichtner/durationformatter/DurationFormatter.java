@@ -443,7 +443,7 @@ public interface DurationFormatter {
 			 * 
 			 * @author Peter Fichtner
 			 */
-			private static class PullFromLeftStrategy implements Strategy {
+			private static class PollFromLeftStrategy implements Strategy {
 
 				public TimeValues apply(TimeValues values) {
 					// findFirstVisible and pull from left
@@ -505,9 +505,10 @@ public interface DurationFormatter {
 			}
 
 			public Strategy createStrategy(Builder builder) {
-				StrategyBuilder sb = new StrategyBuilder()
-						.add(new SetUnusedTimeUnitsInvisibleStrategy(
-								builder.minimum, builder.maximum));
+				StrategyBuilder sb = new StrategyBuilder().add(
+						new SetUnusedTimeUnitsInvisibleStrategy(
+								builder.minimum, builder.maximum)).add(
+						new PollFromLeftStrategy());
 				sb = builder.suppressZeros.contains(SuppressZeros.LEADING) ? sb
 						.add(new RemoveLeadingZerosStrategy(builder.minimum,
 								builder.maximum)) : sb;
@@ -522,7 +523,6 @@ public interface DurationFormatter {
 								builder.maximumAmountOfUnitsToShow)) : sb;
 				sb = builder.round ? sb.add(new RoundingStrategy()) : sb;
 				return sb
-						.add(new PullFromLeftStrategy())
 						.add(new SetAtLeastOneBucketVisibleStrategy(
 								builder.minimum)).build();
 			}
@@ -655,6 +655,7 @@ public interface DurationFormatter {
 			return clone;
 		}
 
+		@Deprecated
 		public Builder leadingZeros(boolean leadingZeros) {
 			Builder clone = clone();
 			clone.formatGenerators.leadingZeros = leadingZeros;
