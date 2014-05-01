@@ -103,68 +103,83 @@ public class DurationFormatterTest {
 
 	@Test
 	public void testShowOnlyHighestUnits() {
-		DurationFormatter fa1 = Builder.DIGITS.maximum(DAYS).build();
-		DurationFormatter fa2 = Builder.DIGITS.maximum(DAYS)
+		DurationFormatter dfa1 = Builder.DIGITS.maximum(DAYS).build();
+		DurationFormatter dfa2 = Builder.DIGITS.maximum(DAYS)
 				.maximumAmountOfUnitsToShow(2).build();
-		DurationFormatter fa3 = Builder.DIGITS.maximum(DAYS)
+		DurationFormatter dfa3 = Builder.DIGITS.maximum(DAYS)
 				.maximumAmountOfUnitsToShow(1).build();
 
-		DurationFormatter fb1 = Builder.SYMBOLS.maximum(DAYS).build();
-		DurationFormatter fb2 = Builder.SYMBOLS.maximum(DAYS)
+		DurationFormatter dfb1 = Builder.SYMBOLS.maximum(DAYS).build();
+		DurationFormatter dfb2 = Builder.SYMBOLS.maximum(DAYS)
 				.maximumAmountOfUnitsToShow(2).build();
-		DurationFormatter fb3 = Builder.SYMBOLS.maximum(DAYS)
+		DurationFormatter dfb3 = Builder.SYMBOLS.maximum(DAYS)
 				.maximumAmountOfUnitsToShow(1).build();
 
 		{
 			long value = get(3, DAYS).as(MILLISECONDS);
 
-			assertEquals("03:00:00:00", fa1.formatMillis(value));
-			assertEquals("03:00", fa2.formatMillis(value));
-			assertEquals("03", fa3.formatMillis(value));
+			assertEquals("03:00:00:00", dfa1.formatMillis(value));
+			assertEquals("03:00", dfa2.formatMillis(value));
+			assertEquals("03", dfa3.formatMillis(value));
 
-			assertEquals("3d 0h 0min 0s", fb1.formatMillis(value));
-			assertEquals("3d 0h", fb2.formatMillis(value));
-			assertEquals("3d", fb3.formatMillis(value));
+			assertEquals("3d 0h 0min 0s", dfb1.formatMillis(value));
+			assertEquals("3d 0h", dfb2.formatMillis(value));
+			assertEquals("3d", dfb3.formatMillis(value));
 		}
 
 		{
 			long value = get(3, DAYS).and(1, SECONDS).as(MILLISECONDS);
 
-			assertEquals("03:00:00:01", fa1.formatMillis(value));
-			assertEquals("03:00", fa2.formatMillis(value));
-			assertEquals("03", fa3.formatMillis(value));
+			assertEquals("03:00:00:01", dfa1.formatMillis(value));
+			assertEquals("03:00", dfa2.formatMillis(value));
+			assertEquals("03", dfa3.formatMillis(value));
 
-			assertEquals("3d 0h 0min 1s", fb1.formatMillis(value));
-			assertEquals("3d 0h", fb2.formatMillis(value));
-			assertEquals("3d", fb3.formatMillis(value));
+			assertEquals("3d 0h 0min 1s", dfb1.formatMillis(value));
+			assertEquals("3d 0h", dfb2.formatMillis(value));
+			assertEquals("3d", dfb3.formatMillis(value));
 		}
 
 		{
 			long value = get(3, DAYS).and(2, HOURS).and(1, SECONDS)
 					.as(MILLISECONDS);
 
-			assertEquals("03:02:00:01", fa1.formatMillis(value));
-			assertEquals("03:02", fa2.formatMillis(value));
-			assertEquals("03", fa3.formatMillis(value));
+			assertEquals("03:02:00:01", dfa1.formatMillis(value));
+			assertEquals("03:02", dfa2.formatMillis(value));
+			assertEquals("03", dfa3.formatMillis(value));
 
-			assertEquals("3d 2h 0min 1s", fb1.formatMillis(value));
-			assertEquals("3d 2h", fb2.formatMillis(value));
-			assertEquals("3d", fb3.formatMillis(value));
+			assertEquals("3d 2h 0min 1s", dfb1.formatMillis(value));
+			assertEquals("3d 2h", dfb2.formatMillis(value));
+			assertEquals("3d", dfb3.formatMillis(value));
 		}
 
 		{
 			long value = get(3, DAYS).and(12, HOURS).and(31, MINUTES)
 					.and(1, SECONDS).as(MILLISECONDS);
 
-			assertEquals("03:12:31:01", fa1.formatMillis(value));
-			assertEquals("03:13", fa2.formatMillis(value));
-			assertEquals("04", fa3.formatMillis(value));
+			assertEquals("03:12:31:01", dfa1.formatMillis(value));
+			assertEquals("03:13", dfa2.formatMillis(value));
+			assertEquals("04", dfa3.formatMillis(value));
 
-			assertEquals("3d 12h 31min 1s", fb1.formatMillis(value));
-			assertEquals("3d 13h", fb2.formatMillis(value));
-			assertEquals("4d", fb3.formatMillis(value));
+			assertEquals("3d 12h 31min 1s", dfb1.formatMillis(value));
+			assertEquals("3d 13h", dfb2.formatMillis(value));
+			assertEquals("4d", dfb3.formatMillis(value));
 		}
 
+	}
+
+	@Test
+	public void testShowOnlyHighestUnits2() {
+		DurationFormatter df = Builder.SYMBOLS.minimum(SECONDS).maximum(HOURS)
+				.suppressZeros(LEADING, TRAILING, MIDDLE)
+				.maximumAmountOfUnitsToShow(1).build();
+		assertEquals("33s", df.formatMillis(SECONDS.toMillis(33)));
+		assertEquals("33min", df.formatMillis(MINUTES.toMillis(33)));
+		assertEquals("33h", df.formatMillis(HOURS.toMillis(33)));
+		assertEquals("792h", df.formatMillis(DAYS.toMillis(33)));
+		assertEquals("803h",
+				df.formatMillis(get(33, DAYS).and(11, HOURS).as(MILLISECONDS)));
+		assertEquals("804h",
+				df.formatMillis(get(33, DAYS).and(12, HOURS).as(MILLISECONDS)));
 	}
 
 	@Test
