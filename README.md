@@ -30,13 +30,13 @@ The amount of units can be limited using `maximumAmountOfUnitsToShow`. E.g. when
 ```java
 DurationFormatter df = Builder.SYMBOLS.maximum(DAYS).minimum(SECONDS).suppressZeros(LEADING).maximumAmountOfUnitsToShow(2).build();
 
-assertEquals("3d 0h", df.formatMillis(get(3, DAYS).as(MILLISECONDS)));
-assertEquals("3d 0h", df.formatMillis(get(3, DAYS).and(1, SECONDS).as(MILLISECONDS)));
-assertEquals("3d 2h", df.formatMillis(get(3, DAYS).and(2, HOURS).and(1, SECONDS).as(MILLISECONDS)));
-assertEquals("3d 13h", df.formatMillis(get(3, DAYS).and(12, HOURS).and(31, MINUTES).and(1, SECONDS).as(MILLISECONDS)));
-assertEquals("12h 31min", df.formatMillis(get(12, HOURS).and(31, MINUTES).and(1, SECONDS).as(MILLISECONDS)));
-assertEquals("31min 0s", df.formatMillis(get(31, MINUTES).as(MILLISECONDS)));
-assertEquals("31min 1s", df.formatMillis(get(31, MINUTES).and(1, SECONDS).as(MILLISECONDS)));
+assertEquals("3d 0h", df.formatMillis(DAYS.toMillis(3)));
+assertEquals("3d 0h", df.formatMillis(DAYS.toMillis(3) + SECONDS.toMillis(1)));
+assertEquals("3d 2h", df.formatMillis(DAYS.toMillis(3) + HOURS.toMillis(2) + SECONDS.toMillis(1)));
+assertEquals("3d 13h", df.formatMillis(DAYS.toMillis(3) + HOURS.toMillis(12) + MINUTES.toMillis(31) + SECONDS.toMillis(1)));
+assertEquals("12h 31min", df.formatMillis(HOURS.toMillis(12) + MINUTES.toMillis(31) + SECONDS.toMillis(1)));
+assertEquals("31min 0s", df.formatMillis(MINUTES.toMillis(31)));
+assertEquals("31min 1s", df.formatMillis(MINUTES.toMillis(31) + SECONDS.toMillis(1)));
 ```
 
 To create your customized DurationFormatter you can use one of the predefined Builders<br>
