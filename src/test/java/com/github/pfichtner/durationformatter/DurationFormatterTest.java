@@ -176,6 +176,8 @@ public class DurationFormatterTest {
 		assertEquals("33min", df.formatMillis(MINUTES.toMillis(33)));
 		assertEquals("33h", df.formatMillis(HOURS.toMillis(33)));
 		assertEquals("792h", df.formatMillis(DAYS.toMillis(33)));
+		assertEquals("793h", df.formatMillis(get(33, DAYS).and(59, MINUTES).as(
+				MILLISECONDS)));
 		assertEquals("803h",
 				df.formatMillis(get(33, DAYS).and(11, HOURS).as(MILLISECONDS)));
 		assertEquals("804h",

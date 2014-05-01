@@ -505,10 +505,11 @@ public interface DurationFormatter {
 			}
 
 			public Strategy createStrategy(Builder builder) {
+				PollFromLeftStrategy pollFromLeftStrategy = new PollFromLeftStrategy();
 				StrategyBuilder sb = new StrategyBuilder().add(
 						new SetUnusedTimeUnitsInvisibleStrategy(
 								builder.minimum, builder.maximum)).add(
-						new PollFromLeftStrategy());
+						pollFromLeftStrategy);
 				sb = builder.suppressZeros.contains(SuppressZeros.LEADING) ? sb
 						.add(new RemoveLeadingZerosStrategy(builder.minimum,
 								builder.maximum)) : sb;
@@ -521,7 +522,10 @@ public interface DurationFormatter {
 				sb = builder.maximumAmountOfUnitsToShow > 0 ? sb
 						.add(new LimitStrategy(
 								builder.maximumAmountOfUnitsToShow)) : sb;
-				sb = builder.round ? sb.add(new RoundingStrategy()) : sb;
+				// pushLeft (when rounding) can lead to pushes into invisible
+				// buckets, let's get them back using PollFromLeftStrategy
+				sb = builder.round ? sb.add(new RoundingStrategy()).add(
+						pollFromLeftStrategy) : sb;
 				return sb
 						.add(new SetAtLeastOneBucketVisibleStrategy(
 								builder.minimum)).build();
