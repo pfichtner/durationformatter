@@ -25,7 +25,7 @@ DurationFormatter df = DurationFormatter.SYMBOLS;
 assertEquals("792h 0min 33s", df.formatMillis(DAYS.toMillis(33) + SECONDS.toMillis(33)));
 ```
 
-The amount of units can be limited using `java maximumAmountOfUnitsToShow`. E.g. when having long running actions like downloads it makes no sense to generate texts like *2 days 0 hours 0 minutes 17 seconds*, the information *2 days 0 hours* might be enough but later, when there are only some minutes or seconds left, the text should be *x minutes* or *x seconds*, see this example
+The amount of units can be limited using `maximumAmountOfUnitsToShow`. E.g. when having long running actions like downloads it makes no sense to generate texts like *2 days 0 hours 0 minutes 17 seconds*, the information *2 days 0 hours* might be enough but later, when there are only some minutes or seconds left, the text should be *x minutes* or *x seconds*, see this example
 
 ```java
 DurationFormatter df = Builder.SYMBOLS.maximum(DAYS).minimum(SECONDS).suppressZeros(LEADING).maximumAmountOfUnitsToShow(2).build();
