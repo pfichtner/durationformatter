@@ -23,7 +23,21 @@ Default symbol format
 ```java
 DurationFormatter df = DurationFormatter.SYMBOLS;
 assertEquals("792h 0min 33s", df.formatMillis(DAYS.toMillis(33) + SECONDS.toMillis(33)));
-```    
+```
+
+The amount of units can be limited using `java maximumAmountOfUnitsToShow`. E.g. when having long running actions like downloads it makes no sense to generate texts like *2 days 0 hours 0 minutes 17 seconds*, the information *2 days 0 hours* might be enough but later, when there are only some minutes or seconds left, the text should be *x minutes* or *x seconds*, see this example
+
+```java
+DurationFormatter df = Builder.SYMBOLS.maximum(DAYS).minimum(SECONDS).suppressZeros(LEADING).maximumAmountOfUnitsToShow(2).build();
+
+assertEquals("3d 0h", df.formatMillis(get(3, DAYS).as(MILLISECONDS)));
+assertEquals("3d 0h", df.formatMillis(get(3, DAYS).and(1, SECONDS).as(MILLISECONDS)));
+assertEquals("3d 2h", df.formatMillis(get(3, DAYS).and(2, HOURS).and(1, SECONDS).as(MILLISECONDS)));
+assertEquals("3d 13h", df.formatMillis(get(3, DAYS).and(12, HOURS).and(31, MINUTES).and(1, SECONDS).as(MILLISECONDS)));
+assertEquals("12h 31min", df.formatMillis(get(12, HOURS).and(31, MINUTES).and(1, SECONDS).as(MILLISECONDS)));
+assertEquals("31min 0s", df.formatMillis(get(31, MINUTES).as(MILLISECONDS)));
+assertEquals("31min 1s", df.formatMillis(get(31, MINUTES).and(1, SECONDS).as(MILLISECONDS)));
+```
 
 To create your customized DurationFormatter you can use one of the predefined Builders<br>
 ...there is one for digits...
