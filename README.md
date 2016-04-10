@@ -1,4 +1,4 @@
-# durationformatter [![Build Status](https://buildhive.cloudbees.com/job/pfichtner/job/durationformatter/badge/icon)](https://buildhive.cloudbees.com/job/pfichtner/job/durationformatter/)
+# durationformatter [![Build Status](https://travis-ci.org/pfichtner/durationformatter.svg?branch=master)](https://travis-ci.org/pfichtner/durationformatter)
 
 
 Java Library minimal in size and without overhead just for formatting durations
